@@ -8,6 +8,8 @@ import type { Buddy, BuddyStats, Mood, Quip, Rarity, Save, Soul } from '../types
 import {
   EGG,
   EYE_STYLES,
+  HIDDEN_RATE,
+  HIDDEN_SPECIES,
   INSPIRATIONS,
   RARITY_COLOR,
   RARITY_RATES,
@@ -87,7 +89,9 @@ export function deriveBuddy(seed: string, ascensions = 0): Buddy {
   const pick = <T,>(list: readonly T[]): T => list[Math.floor(rnd() * list.length)] ?? list[0]!
 
   // 物種和星數各自獨立：任何動物都可能是 5 星
-  const species = pick(SPECIES).id
+  const picked = pick(SPECIES).id
+  // 隱藏物種用另一組亂數判定，其他結果完全不受影響
+  const species = seeded(`${seed}:hidden`)() < HIDDEN_RATE ? HIDDEN_SPECIES[0]!.id : picked
   let r = rnd()
   let rarity: Rarity = 1
   for (const tier of [5, 4, 3, 2] as const) {

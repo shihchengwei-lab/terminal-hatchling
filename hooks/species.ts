@@ -25,6 +25,12 @@ export const SPECIES: Species[] = [
   { id: 'shiba', label: '柴犬', art: [' /\\    /\\ ', '/  \\__/  \\', '|   {E}  |', '|    ^   |', ' \\___w__/ '], desc: '一隻好奇心旺盛的柴犬，每個新檔案都想湊過去聞一聞', labelEn: 'Shiba', descEn: 'a curious shiba that wants to sniff every new file' },
 ]
 
+/** 不列在清單裡、也不寫進 README 的隱藏物種：孵化時由另一組亂數決定，不影響其他結果 */
+export const HIDDEN_SPECIES: Species[] = [
+  { id: 'crow', label: '烏鴉', art: ['     __    ', '   _( ¤\\==>', '  /     /  ', ' /  ___(   ', '/__/  \\_\\  ', '   ^  ^    '], desc: '一隻會把亮晶晶的東西藏起來的烏鴉，記得你每一次偷懶的 commit', labelEn: 'Crow', descEn: 'a crow that hoards shiny things and remembers every lazy commit you ever made' },
+]
+export const HIDDEN_RATE = 0.01
+
 export const RARITY_ORDER: Rarity[] = [1, 2, 3, 4, 5]
 export const RARITY_RATES: Record<Rarity, number> = { 1: 0.6, 2: 0.25, 3: 0.1, 4: 0.04, 5: 0.01 }
 export const RARITY_LABEL: Record<Rarity, string> = { 1: '普通', 2: '少見', 3: '稀有', 4: '史詩', 5: '傳說' }
@@ -96,7 +102,7 @@ export const EGG: [string, string, string][] = [
 ]
 
 export function speciesOf(id: string): Species {
-  return SPECIES.find(s => s.id === id) ?? SPECIES[0]!
+  return SPECIES.find(s => s.id === id) ?? HIDDEN_SPECIES.find(s => s.id === id) ?? SPECIES[0]!
 }
 
 /** 眼睛款式：平常與忙碌時的眼睛，其他心情會換表情 */

@@ -484,3 +484,23 @@ test('if the rewrite fails the old personality stays', ZH, async ($, on) => {
   const c = await $.command.run({ command: 'buddy', args: 'card' })
   expect(c.text).toContain('愛碎念')
 })
+
+test('about 1% hatch as the hidden species; nothing else about them changes', ZH, async ($, on) => {
+  let crows = 0
+  let crowSeed = ''
+  for (let i = 0; i < 20000; i += 1) {
+    const b = deriveBuddy(`h-${i}`)
+    if (b.species === 'crow') {
+      crows += 1
+      crowSeed ||= `h-${i}`
+    }
+  }
+  expect(crows / 20000).toBeGreaterThan(0.005)
+  expect(crows / 20000).toBeLessThan(0.02)
+  await start($, on, { 'buddy.bound.v1': { ...SAVE_X, seed: crowSeed, soul: { name: '阿丸', persona: '藏東西', species: 'crow', v: 4, lang: 'zh-TW' } } })
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('烏鴉')
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /==>/ }))?.text).toContain('==>')
+  await ui.unmount()
+})
