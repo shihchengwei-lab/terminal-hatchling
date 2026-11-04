@@ -35,7 +35,7 @@ The install first asks `Add marketplace?`. Answer `y`, then pick a scope.
 | Input | What it does |
 | --- | --- |
 | `/buddy` | The first time: hatches an egg. After that: shows or hides the companion. While hidden it makes no comments and calls no model |
-| `/buddy card` | Shows its card: stars, species, name, personality and four stats |
+| `/buddy card` | Shows its card: stars, species, name, personality and five stats |
 | `/buddy pet` | Pets it; hearts float above its head |
 
 ## Language
@@ -53,7 +53,8 @@ After a language change, Haiku rewrites the name and personality in the new lang
 - **Seed**: at hatch it reads `git config --global user.email` and uses its SHA-256 hash as the seed, so the same email hatches the same companion (species, stars, shiny, stats, eyes) on any machine. Without an email it falls back to a random seed on this machine. The email itself is never stored and never sent to a model.
 - **Species**: sparrow, cat, goose, slime, dragon, capybara, Taiwan blue magpie, Formosan black bear, fox, shiba, all equally likely.
 - **Stars**: independent of species. ★ Common 60%, ★★ Uncommon 25%, ★★★ Rare 10%, ★★★★ Epic 4%, ★★★★★ Legendary 1%. Separately, 2% are shiny.
-- **Name and personality**: written once by Haiku at hatch, from the stars, species, stats and four inspiration words picked by the seed. The more stars, the stranger.
+- **Stats**: BUG-SNIFF (nose for bugs), CALM (composure), MAYHEM (unpredictability), OBSESSION (tendency to fixate), SASS (sharpness of tongue). Their range rises with the stars. Every companion has one clear strength, the highest stat, and one clear weakness, the lowest.
+- **Name and personality**: written once by Haiku at hatch, from the stars, species, stats and four inspiration words picked by the seed. The personality has to grow out of the strength and the weakness, and the more stars, the stranger.
 
 ## When it talks
 

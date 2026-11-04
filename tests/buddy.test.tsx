@@ -9,7 +9,7 @@ const BAND = { plugin: 'terminal-hatchling', component: 'AbovePrompt', props: { 
 const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const SOUL_REPLY = '{"name":"鍋巴","persona":"看到沒關的檔案就會偷偷蓋上鍋蓋。"}'
 const SAVE_X = {
-  seed: 'x', soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 2 },
+  seed: 'x', soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 3 },
   name: null, xp: 0, pets: 0, isHidden: false,
 }
 const CARD_ROW = (text: string, args = '') => ({
@@ -111,7 +111,7 @@ test('/buddy then toggles hide and show as plain text; /buddy card draws the car
   for (const surface of ['terminal', 'desktop', 'vscode', 'mobile'] as const) {
     ui = await $.ui.mount({ ...CARD_ROW(c.text, 'card'), surface })
     expect((await ui.find({ type: 'Text', text: /愛碎念/ }))?.text).toContain('「愛碎念」')
-    expect((await ui.find({ type: 'Text', text: /專注/ }))?.text).toMatch(/█/)
+    expect((await ui.find({ type: 'Text', text: /抓蟲/ }))?.text).toMatch(/抓蟲 [█░]{20} +\d+/)
     await ui.unmount()
   }
 })
@@ -293,7 +293,7 @@ test('in English the hatch prompt, card, comments and replies are English', EN, 
   const c = await $.command.run({ command: 'buddy', args: 'card' })
   expect(c.text).toContain('Crumbs')
   expect(c.text).toContain('Personality: Sweeps unused imports')
-  expect(c.text).toMatch(/FOCUS/)
+  expect(c.text).toMatch(/BUG-SNIFF/)
   let ui = await $.ui.mount({ ...CARD_ROW(c.text, 'card'), surface: 'desktop' })
   expect((await ui.find({ type: 'Text', text: /Sweeps/ }))?.text).toBe('"Sweeps unused imports under the rug and denies it."')
   await ui.unmount()
@@ -337,4 +337,25 @@ test('auto with no language hint is English', async ($, on) => {
   await start($, on)
   const r = await $.command.run({ command: 'buddy', args: '' })
   expect(r.text).toBe('An egg starts to hatch...')
+})
+
+test('every companion has one clear strength and one clear weakness; the hatch prompt names both', ZH, async ($, on) => {
+  for (let i = 0; i < 2000; i += 1) {
+    const b = deriveBuddy(`stats-${i}`)
+    const values = Object.values(b.stats).sort((x, y) => y - x)
+    expect(values.length).toBe(5)
+    expect(values[0]! > values[1]!).toBe(true)
+    expect(values[3]! > values[4]!).toBe(true)
+    expect(values[0]! - values[4]!).toBeGreaterThanOrEqual(25)
+  }
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return { value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }
+  })
+  const clock = await start($, on)
+  await $.command.run({ command: 'buddy', args: '' })
+  await clock.advance(5000)
+  expect(reqs[0].prompt).toMatch(/最高：(抓蟲|定力|脫序|執念|酸度) \d+；最低：(抓蟲|定力|脫序|執念|酸度) \d+/)
+  expect(reqs[0].system).toContain('強項要強到變成毛病')
 })

@@ -44,13 +44,8 @@ export function starsOf(r: Rarity): string {
 export const SHINY_RATE = 0.02
 export const SHINY_COLORS = ['red', 'yellow', 'green', 'cyan', 'blue', 'magenta']
 
-export const STAT_LABEL: Record<StatName, string> = {
-  focus: '專注',
-  curiosity: '好奇',
-  patience: '耐心',
-  chatter: '碎念',
-}
-export const STAT_NAMES: StatName[] = ['focus', 'curiosity', 'patience', 'chatter']
+/** 抓蟲：找 bug 的嗅覺｜定力：多沉得住氣｜脫序：多難預測｜執念：多容易鑽牛角尖｜酸度：嘴多毒 */
+export const STAT_NAMES: StatName[] = ['bugsniff', 'calm', 'mayhem', 'obsession', 'sass']
 
 /** 孵化時給 Haiku 的靈感詞，每隻由種子挑 4 個 */
 export const INSPIRATIONS = [

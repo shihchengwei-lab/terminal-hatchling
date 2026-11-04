@@ -19,9 +19,9 @@ type Strings = {
   personaMax: number
   // 孵化
   soulSystem: string
-  soulPrompt: (p: { rarity: string; weird: string; shiny: boolean; species: string; desc: string; stats: string; words: string }) => string
+  soulPrompt: (p: { rarity: string; weird: string; shiny: boolean; species: string; desc: string; stats: string; high: string; low: string; words: string }) => string
   // 每輪評論（fork）
-  forkPersona: (p: { name: string; desc: string; rarity: string; persona: string | null; trait: string; chatter: number; curiosity: number }) => string[]
+  forkPersona: (p: { name: string; desc: string; rarity: string; persona: string | null; trait: string; sass: number; mayhem: number }) => string[]
   forkEvent: (label: string, detail: string) => string[]
   forkSkip: string
   formatLine: string
@@ -59,7 +59,7 @@ type Strings = {
 export const STRINGS: Record<Lang, Strings> = {
   'zh-TW': {
     rarity: { 1: '普通', 2: '少見', 3: '稀有', 4: '史詩', 5: '傳說' },
-    stat: { focus: '專注', curiosity: '好奇', patience: '耐心', chatter: '碎念' },
+    stat: { bugsniff: '抓蟲', calm: '定力', mayhem: '脫序', obsession: '執念', sass: '酸度' },
     weirdness: {
       1: '普通的小傢伙，只有一點點怪',
       2: '比一般的再怪一點',
@@ -76,6 +76,8 @@ export const STRINGS: Record<Lang, Strings> = {
       '根據稀有度、物種、屬性和幾個靈感詞，發明：',
       '1. 名字：一個詞，2 到 4 個中文字，好記、帶一點荒謬感，原創、不要用現有作品的角色名。',
       '2. 一句話個性：具體、好笑，包含一個會影響牠怎麼評論程式碼的怪癖。',
+      '個性必須從最高和最低的屬性長出來：強項要強到變成毛病，弱項要弱到讓人擔心。不要寫成「可愛、熱心、有點迷糊」這種普通個性。',
+      '屬性意思：抓蟲＝找 bug 的嗅覺，定力＝多沉得住氣，脫序＝多難預測，執念＝多容易鑽牛角尖，酸度＝嘴多毒。',
       '稀有度越高，越怪、越具體、越讓人記得住。',
       '用台灣繁體中文。只輸出 JSON：{"name":"…","persona":"…"}，不要其他文字。',
     ].join('\n'),
@@ -84,12 +86,13 @@ export const STRINGS: Record<Lang, Strings> = {
         `稀有度：${p.rarity}（${p.weird}）${p.shiny ? '，閃光個體' : ''}`,
         `物種：${p.species}（${p.desc}）`,
         `屬性：${p.stats}`,
+        `最高：${p.high}；最低：${p.low}`,
         `靈感詞：${p.words}`,
       ].join('\n'),
     forkPersona: p => [
       '（這是一則旁支請求，與主對話無關，不要回覆主對話的使用者。）',
       `你現在扮演「${p.name}」：${p.desc}，是使用者寫程式時坐在終端機角落的夥伴（${p.rarity}）。`,
-      p.persona ? `人設：${p.persona}` : `個性：${p.trait}。碎念程度 ${p.chatter}/100、好奇心 ${p.curiosity}/100。`,
+      p.persona ? `人設：${p.persona}` : `個性：${p.trait}。酸度 ${p.sass}/100、脫序 ${p.mayhem}/100。`,
       '你會注意主對話裡使用者可能漏看的重點（風險、待辦、沒驗證的假設），用角色口吻提醒。',
       '你沒有工具，不要想太久，立刻回答。',
       '讀完上面主對話的最後一輪，用台灣繁體中文寫一句不超過 40 字的話。',
@@ -133,7 +136,7 @@ export const STRINGS: Record<Lang, Strings> = {
   },
   en: {
     rarity: { 1: 'Common', 2: 'Uncommon', 3: 'Rare', 4: 'Epic', 5: 'Legendary' },
-    stat: { focus: 'FOCUS', curiosity: 'CURIOSITY', patience: 'PATIENCE', chatter: 'CHATTER' },
+    stat: { bugsniff: 'BUG-SNIFF', calm: 'CALM', mayhem: 'MAYHEM', obsession: 'OBSESSION', sass: 'SASS' },
     weirdness: {
       1: 'an ordinary little critter, only slightly odd',
       2: 'a bit odder than most',
@@ -150,6 +153,8 @@ export const STRINGS: Record<Lang, Strings> = {
       'From a rarity, a species, stats and a few inspiration words, invent:',
       '1. A name: one word, at most 12 characters, memorable and a little absurd, original (not a character from an existing work).',
       '2. A one-sentence personality: specific and funny, with one quirk that shapes how it comments on code.',
+      'The personality must grow out of its highest and lowest stats: the strength so strong it becomes a flaw, the weakness so weak it is worrying. Do not write a generic "cute, helpful, a bit clumsy" personality.',
+      'What the stats mean: BUG-SNIFF = nose for bugs, CALM = composure, MAYHEM = unpredictability, OBSESSION = tendency to fixate, SASS = sharpness of tongue.',
       'The higher the rarity, the odder, more specific and more memorable.',
       'Write in English. Output only JSON: {"name":"…","persona":"…"}, nothing else.',
     ].join('\n'),
@@ -158,12 +163,13 @@ export const STRINGS: Record<Lang, Strings> = {
         `Rarity: ${p.rarity} (${p.weird})${p.shiny ? ', a shiny one' : ''}`,
         `Species: ${p.species} (${p.desc})`,
         `Stats: ${p.stats}`,
+        `Highest: ${p.high}; lowest: ${p.low}`,
         `Inspiration words: ${p.words}`,
       ].join('\n'),
     forkPersona: p => [
       '(This is a side request, separate from the main conversation. Do not reply to the user of the main conversation.)',
       `You are now "${p.name}": ${p.desc}, a companion sitting in the corner of the user's terminal while they code (${p.rarity}).`,
-      p.persona ? `Personality: ${p.persona}` : `Personality: ${p.trait}. Chatter ${p.chatter}/100, curiosity ${p.curiosity}/100.`,
+      p.persona ? `Personality: ${p.persona}` : `Personality: ${p.trait}. Sass ${p.sass}/100, mayhem ${p.mayhem}/100.`,
       'You notice what the user might miss in the main conversation (risks, to-dos, unverified assumptions) and point it out in character.',
       'You have no tools. Do not deliberate; answer right away.',
       'Having read the last turn of the main conversation above, write one sentence of at most 20 words in English.',

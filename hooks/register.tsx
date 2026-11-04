@@ -43,7 +43,7 @@ const STORE_KEY = 'buddy.bound.v1'
 const SOUL_MODEL = 'haiku'
 const SOUL_TIMEOUT_MS = 30_000
 /** 人設格式的版本：改寫法時加一，舊人設會重寫 */
-const SOUL_VERSION = 2
+const SOUL_VERSION = 3
 const HATCH_TICKS = 6
 const TICK_MS = 500
 const MIN_ANSWER_CHARS = 80
@@ -100,8 +100,13 @@ export function deriveBuddy(seed: string): Buddy {
   const [lo, hi] = RARITY_STAT_RANGE[rarity]
   const stats = {} as BuddyStats
   for (const k of STAT_NAMES) stats[k] = lo + Math.floor(rnd() * (hi - lo + 1))
+  // 一個強項、一個弱項，個性從這兩個極端長出來
+  // 強項一定是最高、弱項一定是最低（各比其他三項高或低 20，受 1～100 的上下限限制）
   const peak = pick(STAT_NAMES)
-  stats[peak] = Math.min(100, stats[peak] + 20)
+  const dump = pick(STAT_NAMES.filter(k => k !== peak))
+  const rest = STAT_NAMES.filter(k => k !== peak && k !== dump).map(k => stats[k])
+  stats[peak] = Math.min(100, Math.max(...rest, stats[peak]) + 20)
+  stats[dump] = Math.max(1, Math.min(...rest, stats[dump]) - 20)
   // 只存位置，文字依語言取（和 pick 一樣只用一次亂數，舊種子結果不變）
   const trait = Math.floor(rnd() * TRAITS.length)
   const eyeStyle = pick(EYE_STYLES).id
@@ -151,6 +156,9 @@ function soulRequest(b: Buddy, seed: string): { system: string; prompt: string }
   const sp = speciesOf(b.species)
   const t = T()
   const stats = STAT_NAMES.map(k => `${t.stat[k]} ${b.stats[k]}/100`).join(t.listSep)
+  const sorted = STAT_NAMES.slice().sort((x, y) => b.stats[y] - b.stats[x])
+  const high = sorted[0]!
+  const low = sorted[sorted.length - 1]!
   return {
     system: t.soulSystem,
     prompt: t.soulPrompt({
@@ -160,6 +168,8 @@ function soulRequest(b: Buddy, seed: string): { system: string; prompt: string }
       species: speciesLabel(sp, lang),
       desc: speciesDesc(sp, lang),
       stats,
+      high: `${t.stat[high]} ${b.stats[high]}`,
+      low: `${t.stat[low]} ${b.stats[low]}`,
       words: [...inspirationsOf(seed), traitText(b.trait, lang)].join(t.listSep),
     }),
   }
@@ -206,8 +216,8 @@ function persona(s: Save, ev?: BuddyEvent): string {
       rarity: `${starsOf(b.rarity)} ${t.rarity[b.rarity]}`,
       persona: s.soul?.persona ?? null,
       trait: traitText(b.trait, lang),
-      chatter: b.stats.chatter,
-      curiosity: b.stats.curiosity,
+      sass: b.stats.sass,
+      mayhem: b.stats.mayhem,
     }),
     ...(ev ? t.forkEvent(t.event[ev.kind], ev.detail) : [t.forkSkip]),
     t.formatLine,

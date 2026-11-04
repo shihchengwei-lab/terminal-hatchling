@@ -1,7 +1,7 @@
 export type Mood = 'idle' | 'busy' | 'happy' | 'worried' | 'sleepy'
 /** 稀有度就是星數：1 星最常見，5 星最稀有，和物種無關 */
 export type Rarity = 1 | 2 | 3 | 4 | 5
-export type StatName = 'focus' | 'curiosity' | 'patience' | 'chatter'
+export type StatName = 'bugsniff' | 'calm' | 'mayhem' | 'obsession' | 'sass'
 export type BuddyStats = Record<StatName, number>
 
 /** 由種子算出來的固定部分：同一個種子永遠得到同一隻 */
