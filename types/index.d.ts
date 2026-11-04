@@ -10,13 +10,14 @@ export type Buddy = {
   rarity: Rarity
   isShiny: boolean
   stats: BuddyStats
-  trait: string
+  /** 個性關鍵字在 TRAITS / TRAITS_EN 裡的位置 */
+  trait: number
   /** 眼睛款式 */
   eyeStyle: string
 }
 
 /** 孵化時由 Haiku 寫一次的名字與人設 */
-export type Soul = { name: string; persona: string; species: string; v?: number }
+export type Soul = { name: string; persona: string; species: string; v?: number; lang?: 'en' | 'zh-TW' }
 
 export type Save = {
   seed: string

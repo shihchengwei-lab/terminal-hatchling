@@ -1,1 +1,19 @@
-{ "name": "terminal-hatchling", "version": "0.22.0", "description": "綁定夥伴：由種子雜湊決定物種、星數稀有度、閃光與屬性，孵化時由 Haiku 寫一次名字與人設，坐在輸入框上方，每輪結束用旁支模型冒一句話", "types": "./types/index.d.ts" }
+{
+  "name": "terminal-hatchling",
+  "version": "0.23.0",
+  "description": "A companion hatched from an egg above the Claude Code prompt: species, stars and stats come from a seed, Haiku writes its name and personality, and it comments on your work at the end of each turn.",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "language": {
+      "type": "string",
+      "title": "Language",
+      "description": "Language the companion speaks: auto follows Claude Code's language setting, then LANG",
+      "default": "auto",
+      "options": [
+        "auto",
+        "en",
+        "zh-TW"
+      ]
+    }
+  }
+}

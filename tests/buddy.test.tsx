@@ -2,6 +2,9 @@ import { expect, mock, test } from 'claude-code/testing'
 
 import { deriveBuddy, inspirationsOf } from '../hooks/register'
 
+const ZH = { options: { language: 'zh-TW' } }
+const EN = { options: { language: 'en' } }
+
 const BAND = { plugin: 'terminal-hatchling', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as const
 const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const SOUL_REPLY = '{"name":"鍋巴","persona":"看到沒關的檔案就會偷偷蓋上鍋蓋。"}'
@@ -44,7 +47,7 @@ test('same seed always gives the same buddy; stars spread as the rates say', asy
   expect(legend.size).toBeGreaterThan(5)
 })
 
-test('nothing shows and nothing is called until the first /buddy hatches an egg', async ($, on) => {
+test('nothing shows and nothing is called until the first /buddy hatches an egg', ZH, async ($, on) => {
   const reqs: any[] = []
   on('model.complete', (_: unknown, e: any) => {
     reqs.push(e)
@@ -74,7 +77,7 @@ test('nothing shows and nothing is called until the first /buddy hatches an egg'
   await ui.unmount()
 })
 
-test('/buddy then toggles hide and show as plain text; /buddy card draws the card', async ($, on) => {
+test('/buddy then toggles hide and show as plain text; /buddy card draws the card', ZH, async ($, on) => {
   const forks: string[] = []
   on('model.fork', (_: unknown, e: any) => {
     forks.push(e.prompt)
@@ -113,7 +116,7 @@ test('/buddy then toggles hide and show as plain text; /buddy card draws the car
   }
 })
 
-test('/buddy pet floats hearts; other arguments only print the usage', async ($, on) => {
+test('/buddy pet floats hearts; other arguments only print the usage', ZH, async ($, on) => {
   const clock = await start($, on, { 'buddy.bound.v1': SAVE_X })
   const r = await $.command.run({ command: 'buddy', args: 'pet' })
   expect(r.text).toContain('你摸了摸 阿丸')
@@ -131,7 +134,7 @@ test('/buddy pet floats hearts; other arguments only print the usage', async ($,
   }
 })
 
-test('a long idle makes it sleepy; a prompt wakes it', async ($, on) => {
+test('a long idle makes it sleepy; a prompt wakes it', ZH, async ($, on) => {
   on('prompt.submit', (_: unknown, e: any) => ({ text: e.text }))
   const clock = await start($, on, { 'buddy.bound.v1': SAVE_X })
   await clock.advance(6 * 60_000)
@@ -144,7 +147,7 @@ test('a long idle makes it sleepy; a prompt wakes it', async ($, on) => {
   await ui.unmount()
 })
 
-test('a long answer forks once; the cooldown holds', async ($, on) => {
+test('a long answer forks once; the cooldown holds', ZH, async ($, on) => {
   let forks = 0
   on('model.fork', () => {
     forks += 1
@@ -163,7 +166,7 @@ test('a long answer forks once; the cooldown holds', async ($, on) => {
   await ui.unmount()
 })
 
-test('a failed test is remembered and the end-of-turn fork talks about it', async ($, on) => {
+test('a failed test is remembered and the end-of-turn fork talks about it', ZH, async ($, on) => {
   const completes: string[] = []
   const forks: string[] = []
   on('model.complete', (_: unknown, e: any) => {
@@ -202,7 +205,7 @@ test('a failed test is remembered and the end-of-turn fork talks about it', asyn
   expect(forks.length).toBe(1)
 })
 
-test('saying the name gets a reply from Haiku; other messages do not', async ($, on) => {
+test('saying the name gets a reply from Haiku; other messages do not', ZH, async ($, on) => {
   const prompts: string[] = []
   on('model.complete', (_: unknown, e: any) => {
     prompts.push(e.prompt)
@@ -221,7 +224,7 @@ test('saying the name gets a reply from Haiku; other messages do not', async ($,
   await ui.unmount()
 })
 
-test('an old persona is rewritten with the current prompt', async ($, on) => {
+test('an old persona is rewritten with the current prompt', ZH, async ($, on) => {
   let calls = 0
   on('model.complete', () => {
     calls += 1
@@ -236,7 +239,7 @@ test('an old persona is rewritten with the current prompt', async ($, on) => {
   expect(c.text).toContain('鍋蓋')
 })
 
-test('hatching seeds from the git global email; the same email gives the same buddy anywhere', async ($, on) => {
+test('hatching seeds from the git global email; the same email gives the same buddy anywhere', ZH, async ($, on) => {
   const argvs: string[][] = []
   on('process.run', (_: unknown, e: any) => {
     argvs.push(e.argv)
@@ -253,7 +256,7 @@ test('hatching seeds from the git global email; the same email gives the same bu
   expect(c.text).not.toContain('someone')
 })
 
-test('without git it falls back to a random seed', async ($, on) => {
+test('without git it falls back to a random seed', ZH, async ($, on) => {
   on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
   on('model.complete', () => ({ value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }))
   const clock = await start($, on)
@@ -261,4 +264,77 @@ test('without git it falls back to a random seed', async ($, on) => {
   await clock.advance(5000)
   const c = await $.command.run({ command: 'buddy', args: 'card' })
   expect(c.text).toContain('這台機器的隨機種子')
+})
+
+test('in English the hatch prompt, card, comments and replies are English', EN, async ($, on) => {
+  const completes: any[] = []
+  const forks: string[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    completes.push(e)
+    return e.system.includes('invent coding companions')
+      ? { value: { isAnswered: true, text: '{"name":"Crumbs","persona":"Sweeps unused imports under the rug and denies it."}', usage: USAGE } }
+      : { value: { isAnswered: true, text: 'happy|You rang? I was napping on the stack trace.', usage: USAGE } }
+  })
+  on('model.fork', (_: unknown, e: any) => {
+    forks.push(e.prompt)
+    return { value: { isAnswered: true, text: 'worried|Those tests are red; maybe hold the commit.', usage: USAGE } }
+  })
+  on('tool.call', () => ({ isError: true, result: 'x', text: '1 failed' }))
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  on('prompt.submit', (_: unknown, e: any) => ({ text: e.text }))
+  const clock = await start($, on)
+
+  const r = await $.command.run({ command: 'buddy', args: '' })
+  expect(r.text).toBe('An egg starts to hatch...')
+  await clock.advance(5000)
+  expect(completes[0].system).toContain('Write in English')
+  expect(completes[0].prompt).toMatch(/Inspiration words: [a-zA-Z' -]+(, [a-zA-Z' -]+){4}/)
+
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('Crumbs')
+  expect(c.text).toContain('Personality: Sweeps unused imports')
+  expect(c.text).toMatch(/FOCUS/)
+  let ui = await $.ui.mount({ ...CARD_ROW(c.text, 'card'), surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /Sweeps/ }))?.text).toBe('"Sweeps unused imports under the rug and denies it."')
+  await ui.unmount()
+
+  await $.tool.call({ tool: 'Bash', command: 'npm test' })
+  await $.turn.complete({ answer: 'done', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  expect(forks[0]).toContain('the tests failed')
+  expect(forks[0]).toContain('in English')
+
+  await $.prompt.submit({ text: 'Crumbs, what do you think?' })
+  await clock.settle()
+  expect(completes[1].system).toContain('in English')
+  ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
+  expect((await ui.find({ type: 'Text', text: /You rang/ }))?.text).toContain('napping')
+  await ui.unmount()
+
+  const u = await $.command.run({ command: 'buddy', args: 'what' })
+  expect(u.text).toContain('/buddy pet: pet')
+})
+
+test('auto follows LANG; a persona written in another language is rewritten', async ($, on) => {
+  mock.env(on, { LANG: 'zh_TW.UTF-8' })
+  const systems: string[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    systems.push(e.system)
+    return { value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }
+  })
+  const clock = await start($, on, {
+    'buddy.bound.v1': { ...SAVE_X, soul: { ...SAVE_X.soul, lang: 'en' } },
+  })
+  await clock.settle()
+  expect(systems.length).toBe(1)
+  expect(systems[0]).toContain('台灣繁體中文')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('鍋蓋')
+})
+
+test('auto with no language hint is English', async ($, on) => {
+  mock.env(on, {})
+  await start($, on)
+  const r = await $.command.run({ command: 'buddy', args: '' })
+  expect(r.text).toBe('An egg starts to hatch...')
 })

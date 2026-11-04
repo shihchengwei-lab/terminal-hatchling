@@ -1,72 +1,84 @@
 # terminal-hatchling
 
-一個 Claude Code mod：在終端機輸入框上方孵出一隻小動物夥伴。牠的物種、星數、屬性由種子固定決定，孵化時由 Haiku 寫一次名字和個性，之後會在每輪對話結束時看一眼對話，用自己的口吻冒一句話。
+English | [繁體中文](README.zh-TW.md)
+
+A Claude Code mod that hatches a small creature above your prompt. Its species, stars and stats are fixed by a seed. When it hatches, Haiku writes its name and a one-line personality once. After that it glances at the conversation at the end of each turn and, now and then, says something in its own voice.
 
 ```
-  /\_/\      阿丸 ★★★☆☆ Lv.3
- ( • • )    ╭──────────────────────────╮
- (  ^  )    │ 測試紅了，先別急著 commit。 │
-  /|   |\   ╰──────────────────────────╯
- (_|___|_)
+ /\_/\       Crumbs ★★★☆☆ Lv.3
+( • • )     ╭────────────────────────────────────────────╮
+(  ^  )     │ Those tests are red; maybe hold the commit. │
+ /|   |\    ╰────────────────────────────────────────────╯
+(_|___|_)
 ```
 
-## 安裝
+## Install
 
-在 Claude Code 終端機的輸入框：
+At the prompt of a Claude Code terminal session:
 
 ```
 /plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal-hatchling
 ```
 
-從 shell：
+From a shell:
 
 ```
 claude plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal-hatchling
 ```
 
-桌面版 app（`/plugin` 不能用的地方）：點輸入框旁的 +，選 Plugins，用 `shihchengwei-lab/terminal-hatchling` 新增 marketplace，再新增 plugin。
+In the desktop app, where `/plugin` does not run: click + next to the prompt box, then Plugins, Add marketplace with `shihchengwei-lab/terminal-hatchling`, then Add plugin.
 
-安裝時會先問 `Add marketplace?`，回答 `y`，再選安裝範圍。
+The install first asks `Add marketplace?`. Answer `y`, then pick a scope.
 
-## 指令
+## Commands
 
-| 輸入 | 作用 |
+| Input | What it does |
 | --- | --- |
-| `/buddy` | 第一次：孵蛋。之後：切換顯示或隱藏。隱藏時夥伴不評論，也不呼叫任何模型 |
-| `/buddy card` | 顯示角色卡：星數、物種、名字、個性、四項屬性 |
-| `/buddy pet` | 摸摸，頭上會飄愛心 |
+| `/buddy` | The first time: hatches an egg. After that: shows or hides the companion. While hidden it makes no comments and calls no model |
+| `/buddy card` | Shows its card: stars, species, name, personality and four stats |
+| `/buddy pet` | Pets it; hearts float above its head |
 
-## 夥伴怎麼決定
+## Language
 
-- **種子**：孵蛋時讀 `git config --global user.email`，取 SHA-256 雜湊當種子，同一個 email 在任何機器都孵出同一隻（物種、星數、閃光、屬性、眼睛）。讀不到 email 時改用這台機器的隨機種子。email 本身不存檔、不送給任何模型。
-- **物種**：麻雀、貓、鵝、史萊姆、龍、水豚、台灣藍鵲、台灣黑熊、狐狸、柴犬，機率相同。
-- **星數**：和物種無關。★ 普通 60%、★★ 少見 25%、★★★ 稀有 10%、★★★★ 史詩 4%、★★★★★ 傳說 1%。另有 2% 閃光。
-- **名字和個性**：孵化時由 Haiku 寫一次，參考星數、物種、屬性和 4 個由種子挑出的靈感詞。星數越高越怪。
+The companion speaks English or Traditional Chinese, set by the `language` option (the terminal-hatchling row in `/config`, or `pluginConfigs` in settings.json):
 
-## 什麼時候會說話
+- `auto` (default): follows Claude Code's `language` setting, then the `LANG` environment variable. A Chinese hint gives Traditional Chinese; anything else gives English.
+- `en`: English.
+- `zh-TW`: Traditional Chinese (Taiwan).
 
-| 時機 | 模型 | 說明 |
+After a language change, Haiku rewrites the name and personality in the new language at the next session start. A name you gave it yourself is kept.
+
+## How a companion is decided
+
+- **Seed**: at hatch it reads `git config --global user.email` and uses its SHA-256 hash as the seed, so the same email hatches the same companion (species, stars, shiny, stats, eyes) on any machine. Without an email it falls back to a random seed on this machine. The email itself is never stored and never sent to a model.
+- **Species**: sparrow, cat, goose, slime, dragon, capybara, Taiwan blue magpie, Formosan black bear, fox, shiba, all equally likely.
+- **Stars**: independent of species. ★ Common 60%, ★★ Uncommon 25%, ★★★ Rare 10%, ★★★★ Epic 4%, ★★★★★ Legendary 1%. Separately, 2% are shiny.
+- **Name and personality**: written once by Haiku at hatch, from the stars, species, stats and four inspiration words picked by the seed. The more stars, the stranger.
+
+## When it talks
+
+| When | Model | Notes |
 | --- | --- | --- |
-| 一輪對話結束 | session 的主模型（`model.fork`） | 回答至少 80 字、距上次至少 45 秒才評論，沒什麼好說就不出聲 |
-| 這輪測試失敗、工具出錯、一次寫入 80 行以上 | session 的主模型（`model.fork`） | 等這輪結束一定評論，並優先講這件事 |
-| 你的訊息裡提到牠的名字 | Haiku | 馬上回一句 |
+| A turn ends | the session's own model (`model.fork`) | Only when the answer is at least 80 characters and 45 seconds have passed since its last comment; it stays quiet when nothing is worth saying |
+| A turn had failed tests, a tool error, or a write of 80+ lines | the session's own model (`model.fork`) | Always comments when the turn ends, and talks about that first |
+| Your message contains its name | Haiku | Replies right away |
 
-不靠模型的動畫：眨眼、偶爾晃一下、Claude 工作中變成忙碌樣、5 分鐘沒動靜就打瞌睡、被摸時飄愛心。
+Animations that need no model: blinking, an occasional wiggle, a busy look while Claude works, dozing after 5 idle minutes, hearts when petted.
 
-## 費用與資料
+## Cost and data
 
-- 所有模型呼叫都走你自己 Claude Code session 的帳號與用量，沒有額外的後端服務。
-- 評論用的 `model.fork` 讀的是這個 session 本身的對話紀錄（從 prompt cache 讀取）；Haiku 只收到人設和那一則訊息或事件摘要。
-- 不想花費時，`/buddy` 把夥伴藏起來即可。
-- 存檔在 Claude Code 設定資料夾底下這個 plugin 自己的 JSON 檔。
+- Every model call goes through your own Claude Code session's account and usage. There is no extra backend.
+- `model.fork` reads this session's own transcript (served from the prompt cache). Haiku receives only the personality and the one message or event summary.
+- To stop spending, hide the companion with `/buddy`.
+- The save lives in this plugin's own JSON file under your Claude Code configuration directory.
 
-## 開發
+## Development
 
 ```
 claude plugin validate .
 claude plugin test .
 ```
 
-## 授權
+## License
 
-MIT。ASCII 造型多數由 ChatGPT 協助繪製後調整。
+MIT. Most of the ASCII art was drawn with help from ChatGPT and then adjusted.

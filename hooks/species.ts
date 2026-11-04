@@ -1,4 +1,5 @@
 import type { Rarity, StatName } from '../types'
+import type { Lang } from './i18n'
 
 export type Species = {
   id: string
@@ -7,19 +8,21 @@ export type Species = {
   art: string[]
   /** 給旁支模型的角色描述 */
   desc: string
+  labelEn: string
+  descEn: string
 }
 
 export const SPECIES: Species[] = [
-  { id: 'sparrow', label: '麻雀', art: ['    ,--.  ', '  _( {E})>', ' (  .--\'  ', '  `-(__)  ', '    ^^    '], desc: '一隻常在騎樓下跳來跳去的麻雀，嘰嘰喳喳、什麼都想湊熱鬧' },
-  { id: 'cat', label: '貓', art: [' /\\_/\\   ', '( {E} )  ', '(  ^  )  ', ' /|   |\\ ', '(_|___|_)'], desc: '一隻愛趴在鍵盤上的貓，看不順眼的程式碼會直接撥到桌下' },
-  { id: 'goose', label: '鵝', art: ['    __    ', '   ( {E})>', '   /  /   ', '  /  (___ ', ' (_______)'], desc: '一隻脾氣很大的鵝，看到可疑的改動就伸長脖子嘎嘎叫' },
-  { id: 'slime', label: '史萊姆', art: ['     __     ', '   /    \\   ', '  /  {E}  \\ ', ' (    w    )', '  \\_______/ '], desc: '一團軟軟的史萊姆，什麼都吞得下，包括技術債' },
-  { id: 'dragon', label: '龍', art: ['  /\\  /\\  ', ' /  \\/  \\ ', '(  {E}  )>', ' \\  ^  /~~', '  \\___/   '], desc: '一隻小龍，把一堆舊程式碼當寶藏守著，誰想刪都要先過牠' },
-  { id: 'capybara', label: '水豚', art: ['  __    __ ', ' /  `--\'  \\', '(   {E}   )', '|    __   |', ' \\________/'], desc: '一隻泡在溫泉裡的水豚，再大的事都很淡定' },
-  { id: 'bluemagpie', label: '台灣藍鵲', art: ['   ,--.        ', '  ( {E})>      ', '  /  __)       ', ' /__/  \\_______', '       ~~~~~~~~'], desc: '一隻拖著長尾巴的台灣藍鵲，護巢心強，誰動到牠的程式碼都會被念' },
-  { id: 'blackbear', label: '台灣黑熊', art: [' ()    () ', '(   {E}  )', '|   (^)  |', '|  / V \\ |', ' \\_______/'], desc: '一隻胸口有白色 V 字的台灣黑熊，穩重有力，討厭偷工減料' },
-  { id: 'fox', label: '狐狸', art: [' /\\     /\\      ', '/  \\___/  \\     ', '\\   {E}   /  _  ', ' \\   v   /  / ) ', '  )     (__/ /  ', ' (__|_|__)__/   '], desc: '一隻尾巴蓬鬆的狐狸，聰明又多疑，總覺得程式碼裡藏著什麼陷阱' },
-  { id: 'shiba', label: '柴犬', art: [' /\\    /\\ ', '/  \\__/  \\', '|   {E}  |', '|    ^   |', ' \\___w__/ '], desc: '一隻好奇心旺盛的柴犬，每個新檔案都想湊過去聞一聞' },
+  { id: 'sparrow', label: '麻雀', art: ['    ,--.  ', '  _( {E})>', ' (  .--\'  ', '  `-(__)  ', '    ^^    '], desc: '一隻常在騎樓下跳來跳去的麻雀，嘰嘰喳喳、什麼都想湊熱鬧', labelEn: 'Sparrow', descEn: 'a sparrow that hops around under arcades, chirpy and nosy about everything' },
+  { id: 'cat', label: '貓', art: [' /\\_/\\   ', '( {E} )  ', '(  ^  )  ', ' /|   |\\ ', '(_|___|_)'], desc: '一隻愛趴在鍵盤上的貓，看不順眼的程式碼會直接撥到桌下', labelEn: 'Cat', descEn: 'a cat that loves lying on the keyboard and paws code it dislikes off the desk' },
+  { id: 'goose', label: '鵝', art: ['    __    ', '   ( {E})>', '   /  /   ', '  /  (___ ', ' (_______)'], desc: '一隻脾氣很大的鵝，看到可疑的改動就伸長脖子嘎嘎叫', labelEn: 'Goose', descEn: 'a short-tempered goose that stretches its neck and honks at suspicious changes' },
+  { id: 'slime', label: '史萊姆', art: ['     __     ', '   /    \\   ', '  /  {E}  \\ ', ' (    w    )', '  \\_______/ '], desc: '一團軟軟的史萊姆，什麼都吞得下，包括技術債', labelEn: 'Slime', descEn: 'a soft slime that can swallow anything, tech debt included' },
+  { id: 'dragon', label: '龍', art: ['  /\\  /\\  ', ' /  \\/  \\ ', '(  {E}  )>', ' \\  ^  /~~', '  \\___/   '], desc: '一隻小龍，把一堆舊程式碼當寶藏守著，誰想刪都要先過牠', labelEn: 'Dragon', descEn: 'a small dragon guarding a hoard of old code; anyone who wants to delete it must get past it first' },
+  { id: 'capybara', label: '水豚', art: ['  __    __ ', ' /  `--\'  \\', '(   {E}   )', '|    __   |', ' \\________/'], desc: '一隻泡在溫泉裡的水豚，再大的事都很淡定', labelEn: 'Capybara', descEn: 'a capybara soaking in a hot spring, unbothered by even the biggest problems' },
+  { id: 'bluemagpie', label: '台灣藍鵲', art: ['   ,--.        ', '  ( {E})>      ', '  /  __)       ', ' /__/  \\_______', '       ~~~~~~~~'], desc: '一隻拖著長尾巴的台灣藍鵲，護巢心強，誰動到牠的程式碼都會被念', labelEn: 'Taiwan Blue Magpie', descEn: 'a long-tailed Taiwan blue magpie, fiercely protective; touch its code and it will scold you' },
+  { id: 'blackbear', label: '台灣黑熊', art: [' ()    () ', '(   {E}  )', '|   (^)  |', '|  / V \\ |', ' \\_______/'], desc: '一隻胸口有白色 V 字的台灣黑熊，穩重有力，討厭偷工減料', labelEn: 'Formosan Black Bear', descEn: 'a Formosan black bear with a white V on its chest, steady and strong, hates cut corners' },
+  { id: 'fox', label: '狐狸', art: [' /\\     /\\      ', '/  \\___/  \\     ', '\\   {E}   /  _  ', ' \\   v   /  / ) ', '  )     (__/ /  ', ' (__|_|__)__/   '], desc: '一隻尾巴蓬鬆的狐狸，聰明又多疑，總覺得程式碼裡藏著什麼陷阱', labelEn: 'Fox', descEn: 'a fluffy-tailed fox, clever and suspicious, always sure the code hides a trap' },
+  { id: 'shiba', label: '柴犬', art: [' /\\    /\\ ', '/  \\__/  \\', '|   {E}  |', '|    ^   |', ' \\___w__/ '], desc: '一隻好奇心旺盛的柴犬，每個新檔案都想湊過去聞一聞', labelEn: 'Shiba', descEn: 'a curious shiba that wants to sniff every new file' },
 ]
 
 export const RARITY_ORDER: Rarity[] = [1, 2, 3, 4, 5]
@@ -57,6 +60,26 @@ export const INSPIRATIONS = [
   '颱風', '月餅', '鬧鐘', '跳蚤市場', '腳踏車鈴', '檔案櫃',
 ]
 
+export const INSPIRATIONS_EN = [
+  'rice cooker', 'flip-flops', 'fortune blocks', 'neon sign', 'typhoon day off', 'night market', 'last train', 'tapioca pearl', 'temple square', 'convenience store',
+  'soap opera', 'window bars', 'arcade walkway', 'breakfast shop', 'bubble tea', 'radio', 'vinyl record', 'pinball machine', 'calculator', 'spreadsheet',
+  'paper clip', 'eraser', 'yarn', 'submarine', 'lighthouse', 'observatory', 'mail carrier', 'Rubik\'s cube', 'thermos', 'lottery ticket',
+  'typhoon', 'mooncake', 'alarm clock', 'flea market', 'bicycle bell', 'filing cabinet',
+]
+
+export const TRAITS_EN = [
+  'picky about naming',
+  'loves terrible puns',
+  'always worried the tests were not run',
+  'obsessed with refactoring',
+  'keeps wanting a tea break',
+  'quiet but cuts to the point',
+  'easily alarmed',
+  'great at encouragement',
+  'optimistic to a fault',
+  'allergic to TODO comments',
+]
+
 export const TRAITS = [
   '對命名很龜毛',
   '喜歡講冷笑話',
@@ -82,13 +105,13 @@ export function speciesOf(id: string): Species {
 }
 
 /** 眼睛款式：平常與忙碌時的眼睛，其他心情會換表情 */
-export const EYE_STYLES: { id: string; label: string; eyes: string }[] = [
-  { id: 'round', label: '圓眼', eyes: 'o o' },
-  { id: 'dot', label: '豆豆眼', eyes: '• •' },
-  { id: 'swirl', label: '漩渦眼', eyes: '@ @' },
-  { id: 'tiny', label: '小點眼', eyes: '° °' },
-  { id: 'big', label: '大眼', eyes: 'O O' },
-  { id: 'star', label: '星星眼', eyes: '* *' },
+export const EYE_STYLES: { id: string; label: string; labelEn: string; eyes: string }[] = [
+  { id: 'round', label: '圓眼', labelEn: 'round eyes', eyes: 'o o' },
+  { id: 'dot', label: '豆豆眼', labelEn: 'bean eyes', eyes: '• •' },
+  { id: 'swirl', label: '漩渦眼', labelEn: 'swirly eyes', eyes: '@ @' },
+  { id: 'tiny', label: '小點眼', labelEn: 'tiny eyes', eyes: '° °' },
+  { id: 'big', label: '大眼', labelEn: 'big eyes', eyes: 'O O' },
+  { id: 'star', label: '星星眼', labelEn: 'starry eyes', eyes: '* *' },
 ]
 
 export function eyeStyleOf(id: string) {
@@ -98,4 +121,27 @@ export function eyeStyleOf(id: string) {
 /** 換上眼睛：{E} 換成一對眼睛，每個 ¤ 換成一隻眼睛 */
 export function renderArt(art: string[], eyes: string): string[] {
   return art.map(l => l.replace('{E}', eyes).split('¤').join(eyes[0] ?? 'o'))
+}
+
+// ---------- 依語言取文字 ----------
+
+export function speciesLabel(sp: Species, lang: Lang): string {
+  return lang === 'en' ? sp.labelEn : sp.label
+}
+
+export function speciesDesc(sp: Species, lang: Lang): string {
+  return lang === 'en' ? sp.descEn : sp.desc
+}
+
+export function traitText(i: number, lang: Lang): string {
+  return (lang === 'en' ? TRAITS_EN : TRAITS)[i] ?? ''
+}
+
+export function inspirationText(i: number, lang: Lang): string {
+  return (lang === 'en' ? INSPIRATIONS_EN : INSPIRATIONS)[i] ?? ''
+}
+
+export function eyeLabel(id: string, lang: Lang): string {
+  const e = eyeStyleOf(id)
+  return lang === 'en' ? e.labelEn : e.label
 }
