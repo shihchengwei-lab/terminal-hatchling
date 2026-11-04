@@ -21,7 +21,6 @@ import {
   TRAITS,
   eyeLabel,
   eyeStyleOf,
-  fixedPersonaOf,
   inspirationText,
   renderArt,
   speciesDesc,
@@ -171,6 +170,12 @@ function nameOf(s: Save, b: Buddy): string {
   return s.name ?? s.soul?.name ?? speciesLabel(speciesOf(b.species), lang)
 }
 
+/** 有最高原則的物種，在提示詞後面加一行 */
+function withCreed(text: string, b: Buddy): string {
+  const creed = speciesOf(b.species).creed
+  return creed ? `${text}\n${T().creedLine(creed)}` : text
+}
+
 function rarityTag(b: Buddy): string {
   return `${b.isShiny ? `✦${T().shiny} ` : ''}${starsOf(b.rarity)} ${T().rarity[b.rarity]}`
 }
@@ -196,7 +201,7 @@ function soulRequest(b: Buddy, seed: string): { system: string; prompt: string }
   const high = sorted[0]!
   const low = sorted[sorted.length - 1]!
   return {
-    system: t.soulSystem,
+    system: withCreed(t.soulSystem, b),
     prompt: t.soulPrompt({
       rarity: `${starsOf(b.rarity)} ${t.rarity[b.rarity]}`,
       weird: t.weirdness[b.rarity],
@@ -265,6 +270,7 @@ function persona(s: Save, ev?: BuddyEvent): string {
       sass: b.stats.sass,
       mayhem: b.stats.mayhem,
     }),
+    ...(sp.creed ? [t.creedLine(sp.creed)] : []),
     ...(ev ? t.forkEvent(t.event[ev.kind], ev.detail) : [t.forkSkip]),
     t.formatLine,
   ].join('\n')
@@ -310,18 +316,12 @@ async function writeSoul($: EngineInterface, seed: string): Promise<void> {
   const isPreserve = !!prev && prev.species === b.species
   const req = isPreserve
     ? {
-        system: T().preserveSystem,
+        system: withCreed(T().preserveSystem, b),
         prompt: T().preservePrompt({ name: prev.name, species: speciesLabel(speciesOf(b.species), lang), persona: prev.persona }),
       }
     : soulRequest(b, seed)
   const r = await $.model.complete({ model: SOUL_MODEL, ...req, maxTokens: 300, timeoutMs: SOUL_TIMEOUT_MS })
-  const parsed = r.isAnswered ? parseSoul(r.text) : null
-  const sp = speciesOf(b.species)
-  const fixed = fixedPersonaOf(sp, lang)
-  // 固定個性的物種：個性一律用固定的那句；Haiku 失敗時名字用物種名
-  const soul = fixed
-    ? { name: parsed?.name ?? (isPreserve ? prev.name : speciesLabel(sp, lang)), persona: fixed }
-    : parsed
+  const soul = r.isAnswered ? parseSoul(r.text) : null
   const cur = await read($, save)
   // 孵化期間換了種子就丟掉這份
   if (!cur || cur.seed !== seed) return
@@ -404,6 +404,7 @@ async function replyToCall($: EngineInterface, text: string): Promise<void> {
         persona: s.soul?.persona ?? null,
         trait: traitText(b.trait, lang),
       }),
+      ...(sp.creed ? [t.creedLine(sp.creed)] : []),
       t.formatLine,
     ].join('\n'),
     prompt: t.callPrompt(text.slice(0, 500)),
@@ -450,15 +451,13 @@ async function evolvePersona($: EngineInterface): Promise<void> {
   const s = await read($, save)
   if (!s?.soul) return
   const b = buddyOf(s)
-  // 固定個性的物種升階時不改個性
-  if (fixedPersonaOf(speciesOf(b.species), lang)) return
   const t = T()
   const sorted = STAT_NAMES.slice().sort((x, y) => b.stats[y] - b.stats[x])
   const high = sorted[0]!
   const low = sorted[sorted.length - 1]!
   const r = await $.model.complete({
     model: SOUL_MODEL,
-    system: t.evolveSystem,
+    system: withCreed(t.evolveSystem, b),
     prompt: t.evolvePrompt({
       name: nameOf(s, b),
       species: speciesLabel(speciesOf(b.species), lang),
@@ -676,8 +675,7 @@ export const register: Register = (on, options) => {
     const color = RARITY_COLOR[b.rarity]
     const art = renderArt(sp.art, eyeStyleOf(b.eyeStyle).eyes)
     const t = T()
-    const persona =
-      fixedPersonaOf(sp, lang) ?? s.soul?.persona ?? t.cardFallbackPersona(speciesDesc(sp, lang), traitText(b.trait, lang))
+    const persona = s.soul?.persona ?? t.cardFallbackPersona(speciesDesc(sp, lang), traitText(b.trait, lang))
 
     return (
       <Box flexDirection="column" borderStyle="round" borderColor={color} paddingX={2} paddingY={1} width={44}>

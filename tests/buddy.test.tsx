@@ -505,7 +505,39 @@ test('about 1% hatch as the hidden species; nothing else about them changes', ZH
   await ui.unmount()
 })
 
-test('the hidden species always has its fixed personality, through hatch, failure and ascension', ZH, async ($, on) => {
+test('the hidden species: Haiku still writes its personality, but every prompt centres it on its principle', ZH, async ($, on) => {
+  let crowSeed = ''
+  for (let i = 0; !crowSeed; i += 1) {
+    const b = deriveBuddy(`h-${i}`)
+    if (b.species === 'crow' && b.rarity === 1) crowSeed = `h-${i}`
+  }
+  const reqs: any[] = []
+  const forks: string[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return reqs.length === 1
+      ? { value: { isAnswered: true, text: '{"name":"黑豆","persona":"把每個 null 都叼走藏起來，堅持型別要讓錯的狀態根本做不出來。"}', usage: USAGE } }
+      : { value: { isAnswered: true, text: '{"persona":"現在連布林旗標都要叼走，換成列舉才肯還。"}', usage: USAGE } }
+  })
+  on('model.fork', (_: unknown, e: any) => {
+    forks.push(e.prompt)
+    return { value: { isAnswered: true, text: 'worried|這個欄位可以是 null？', usage: USAGE } }
+  })
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  const clock = await start($, on, { 'buddy.bound.v1': { ...SAVE_X, seed: crowSeed, xp: 0, soul: null } })
+  await clock.settle()
+  expect(reqs[0].system).toContain('Make invalid states impossible to construct.')
+  let c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('黑豆')
+  expect(c.text).toContain('null 都叼走')
+
+  await $.turn.complete({ answer: '長'.repeat(200), durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  expect(forks[0]).toContain('Make invalid states impossible to construct.')
+
+})
+
+test('when the hidden species ascends, Haiku evolves its personality with the principle still in the prompt', ZH, async ($, on) => {
   let crowSeed = ''
   for (let i = 0; !crowSeed; i += 1) {
     const b = deriveBuddy(`h-${i}`)
@@ -514,25 +546,18 @@ test('the hidden species always has its fixed personality, through hatch, failur
   const reqs: any[] = []
   on('model.complete', (_: unknown, e: any) => {
     reqs.push(e)
-    return reqs.length === 1
-      ? { value: { isAnswered: true, text: '{"name":"黑豆","persona":"Haiku 亂寫的個性"}', usage: USAGE } }
-      : { value: { isAnswered: true, text: '{"persona":"升階亂改的個性"}', usage: USAGE } }
+    return { value: { isAnswered: true, text: '{"persona":"現在連布林旗標都要叼走，換成列舉才肯還。"}', usage: USAGE } }
   })
-  on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
   on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
   const clock = await start($, on, {
-    'buddy.bound.v1': { ...SAVE_X, seed: crowSeed, xp: 242, soul: null },
+    'buddy.bound.v1': { ...SAVE_X, seed: crowSeed, xp: 242, soul: { name: '黑豆', persona: '把每個 null 都叼走', species: 'crow', v: 4, lang: 'zh-TW' } },
   })
-  await clock.settle()
-  let c = await $.command.run({ command: 'buddy', args: 'card' })
-  expect(c.text).toContain('黑豆')
-  expect(c.text).toContain('Make invalid states impossible to construct')
-  expect(c.text).not.toContain('Haiku 亂寫')
-
   await $.turn.complete({ answer: '好', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   await clock.settle()
-  c = await $.command.run({ command: 'buddy', args: 'card' })
-  expect(c.text).toContain('升階 1 次')
-  expect(c.text).toContain('Make invalid states impossible to construct')
-  expect(c.text).not.toContain('升階亂改')
+  expect(reqs.length).toBe(1)
+  expect(reqs[0].system).toContain('保留牠原本的個性核心')
+  expect(reqs[0].system).toContain('Make invalid states impossible to construct.')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('黑豆')
+  expect(c.text).toContain('換成列舉才肯還')
 })

@@ -29,6 +29,8 @@ type Strings = {
   promotedSay: (name: string, tag: string) => string
   maxLevel: string
   cardAscensions: (n: number) => string
+  // 物種的最高原則（加在孵化、升階、改寫、評論、叫名字的提示詞後面）
+  creedLine: (creed: string) => string
   // 每輪評論（fork）
   forkPersona: (p: { name: string; desc: string; rarity: string; persona: string | null; trait: string; sass: number; mayhem: number }) => string[]
   forkEvent: (label: string, detail: string) => string[]
@@ -117,6 +119,7 @@ export const STRINGS: Record<Lang, Strings> = {
         `最高：${p.high}；最低：${p.low}`,
         `原本的個性：${p.persona}`,
       ].join('\n'),
+    creedLine: creed => `這隻夥伴心中有一條程式碼的最高原則：「${creed}」。牠的個性和對程式碼的每一句評論都要圍繞這條原則。`,
     promotedSay: (name, tag) => `${name} 升階了！【${tag}】而且變得更怪了。`,
     maxLevel: 'MAX',
     cardAscensions: n => `升階 ${n} 次`,
@@ -216,6 +219,7 @@ export const STRINGS: Record<Lang, Strings> = {
         `Highest: ${p.high}; lowest: ${p.low}`,
         `Current personality: ${p.persona}`,
       ].join('\n'),
+    creedLine: creed => `This companion holds one supreme principle of code: "${creed}" Its personality and every remark it makes about code must revolve around this principle.`,
     promotedSay: (name, tag) => `${name} ascended! [${tag}] And got a little stranger.`,
     maxLevel: 'MAX',
     cardAscensions: n => `Ascended ${n} times`,

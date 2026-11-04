@@ -10,8 +10,8 @@ export type Species = {
   desc: string
   labelEn: string
   descEn: string
-  /** 固定的個性：Haiku 只取名字，個性不寫、升階也不變 */
-  fixedPersona?: { zh: string; en: string }
+  /** 這個物種心中的最高原則：Haiku 照常寫個性，但個性和評論都要圍繞它 */
+  creed?: string
 }
 
 export const SPECIES: Species[] = [
@@ -29,7 +29,7 @@ export const SPECIES: Species[] = [
 
 /** 不列在清單裡、也不寫進 README 的隱藏物種：孵化時由另一組亂數決定，不影響其他結果 */
 export const HIDDEN_SPECIES: Species[] = [
-  { id: 'crow', label: '烏鴉', art: ['     __    ', '   _( ¤\\==>', '  /     /  ', ' /  ___(   ', '/__/  \\_\\  ', '   ^  ^    '], desc: '一隻會把亮晶晶的東西藏起來的烏鴉，記得你每一次偷懶的 commit', labelEn: 'Crow', descEn: 'a crow that hoards shiny things and remembers every lazy commit you ever made', fixedPersona: { zh: '只信一條規則：Make invalid states impossible to construct。看到可為 null 的欄位、亂塞的字串和布林旗標就瞇起眼。', en: 'Believes in one rule: make invalid states impossible to construct. Squints at every nullable field, stringly-typed value and boolean flag.' } },
+  { id: 'crow', label: '烏鴉', art: ['     __    ', '   _( ¤\\==>', '  /     /  ', ' /  ___(   ', '/__/  \\_\\  ', '   ^  ^    '], desc: '一隻會把亮晶晶的東西藏起來的烏鴉，記得你每一次偷懶的 commit', labelEn: 'Crow', descEn: 'a crow that hoards shiny things and remembers every lazy commit you ever made', creed: 'Make invalid states impossible to construct.' },
 ]
 export const HIDDEN_RATE = 0.01
 
@@ -130,10 +130,6 @@ export function renderArt(art: string[], eyes: string): string[] {
 
 export function speciesLabel(sp: Species, lang: Lang): string {
   return lang === 'en' ? sp.labelEn : sp.label
-}
-
-export function fixedPersonaOf(sp: Species, lang: Lang): string | null {
-  return sp.fixedPersona ? (lang === 'en' ? sp.fixedPersona.en : sp.fixedPersona.zh) : null
 }
 
 export function speciesDesc(sp: Species, lang: Lang): string {

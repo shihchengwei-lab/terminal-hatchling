@@ -1,6 +1,6 @@
 {
   "name": "terminal-hatchling",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "A companion hatched from an egg above the Claude Code prompt: species, stars and stats come from a seed, Haiku writes its name and personality, and it comments on your work at the end of each turn.",
   "types": "./types/index.d.ts",
   "userConfig": {
