@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { deriveBuddy, inspirationsOf, trimAtBoundary } from '../hooks/register'
+import { addXp, deriveBuddy, inspirationsOf, level, trimAtBoundary } from '../hooks/register'
 
 const ZH = { options: { language: 'zh-TW' } }
 const EN = { options: { language: 'en' } }
@@ -380,4 +380,56 @@ test('rewriting an old-format persona keeps the name', ZH, async ($, on) => {
   const c = await $.command.run({ command: 'buddy', args: 'card' })
   expect(c.text).toContain('阿丸')
   expect(c.text).toContain('鍋蓋')
+})
+
+test('hitting the max level ascends one star and resets xp; 5 stars stays at max', async () => {
+  expect(level(242)).toBe(9)
+  expect(level(243)).toBe(10)
+  expect(level(99999)).toBe(10)
+  let seed = ''
+  for (let i = 0; !seed; i += 1) if (deriveBuddy(`asc-${i}`).rarity === 1) seed = `asc-${i}`
+  const base = { seed, soul: null, name: null, xp: 242, pets: 0, isHidden: false }
+  const { next, promoted } = addXp(base, 1)
+  expect(promoted).toBe(true)
+  expect(next.xp).toBe(0)
+  expect(next.ascensions).toBe(1)
+  const before = deriveBuddy(seed, 0)
+  const after = deriveBuddy(seed, 1)
+  expect(after.rarity).toBe(2)
+  expect(after.species).toBe(before.species)
+  expect(after.isShiny).toBe(before.isShiny)
+  expect(after.eyeStyle).toBe(before.eyeStyle)
+  expect(deriveBuddy(seed, 9).rarity).toBe(5)
+  const top = addXp({ ...base, ascensions: 4, xp: 500 }, 1)
+  expect(top.promoted).toBe(false)
+  expect(top.next.xp).toBe(501)
+})
+
+test('ascending keeps the name and evolves the old personality instead of replacing it', ZH, async ($, on) => {
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return { value: { isAnswered: true, text: '{"persona":"愛碎念，現在連註解裡的錯字都要逐字唸出來。"}', usage: USAGE } }
+  })
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  let seed = ''
+  for (let i = 0; !seed; i += 1) if (deriveBuddy(`asc-${i}`).rarity === 1) seed = `asc-${i}`
+  const clock = await start($, on, {
+    'buddy.bound.v1': {
+      ...SAVE_X, seed, xp: 242,
+      soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy(seed).species, v: 4, lang: 'zh-TW' },
+    },
+  })
+  await $.turn.complete({ answer: '好', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  expect(reqs.length).toBe(1)
+  expect(reqs[0].system).toContain('保留牠原本的個性核心')
+  expect(reqs[0].prompt).toContain('原本的個性：愛碎念')
+  expect(reqs[0].prompt).toContain('★★☆☆☆')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('阿丸')
+  expect(c.text).toContain('★★☆☆☆ 少見')
+  expect(c.text).toContain('逐字唸出來')
+  expect(c.text).toContain('升階 1 次')
+  expect(c.text).toContain('Lv.1')
 })

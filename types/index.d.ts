@@ -26,6 +26,8 @@ export type Save = {
   soul?: Soul | null
   name: string | null
   xp: number
+  /** 滿級升階的次數：每次星數 +1（最多到 5 星），經驗值歸零 */
+  ascensions?: number
   pets: number
   isHidden: boolean
 }

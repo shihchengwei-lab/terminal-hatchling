@@ -20,6 +20,12 @@ type Strings = {
   // 孵化
   soulSystem: string
   soulPrompt: (p: { rarity: string; weird: string; shiny: boolean; species: string; desc: string; stats: string; high: string; low: string; words: string }) => string
+  // 滿級升階：在原本的個性上變怪
+  evolveSystem: string
+  evolvePrompt: (p: { name: string; species: string; persona: string; rarity: string; weird: string; high: string; low: string }) => string
+  promotedSay: (name: string, tag: string) => string
+  maxLevel: string
+  cardAscensions: (n: number) => string
   // 每輪評論（fork）
   forkPersona: (p: { name: string; desc: string; rarity: string; persona: string | null; trait: string; sass: number; mayhem: number }) => string[]
   forkEvent: (label: string, detail: string) => string[]
@@ -89,6 +95,21 @@ export const STRINGS: Record<Lang, Strings> = {
         `最高：${p.high}；最低：${p.low}`,
         `靈感詞：${p.words}`,
       ].join('\n'),
+    evolveSystem: [
+      '你負責讓一隻終端機寫程式夥伴「升階」：牠剛升了一顆星。',
+      '保留牠原本的個性核心和怪癖，不要換掉或重寫成另一隻；在原本的基礎上變得更怪：把原有的怪癖推得更極端，或長出一個跟原本怪癖有關的新毛病。',
+      '寫成一句話，不超過 50 字，用台灣繁體中文。只輸出 JSON：{"persona":"…"}，不要其他文字。',
+    ].join('\n'),
+    evolvePrompt: p =>
+      [
+        `名字：${p.name}（${p.species}）`,
+        `新的稀有度：${p.rarity}（${p.weird}）`,
+        `最高：${p.high}；最低：${p.low}`,
+        `原本的個性：${p.persona}`,
+      ].join('\n'),
+    promotedSay: (name, tag) => `${name} 升階了！【${tag}】而且變得更怪了。`,
+    maxLevel: 'MAX',
+    cardAscensions: n => `升階 ${n} 次`,
     forkPersona: p => [
       '（這是一則旁支請求，與主對話無關，不要回覆主對話的使用者。）',
       `你現在扮演「${p.name}」：${p.desc}，是使用者寫程式時坐在終端機角落的夥伴（${p.rarity}）。`,
@@ -166,6 +187,21 @@ export const STRINGS: Record<Lang, Strings> = {
         `Highest: ${p.high}; lowest: ${p.low}`,
         `Inspiration words: ${p.words}`,
       ].join('\n'),
+    evolveSystem: [
+      'You "ascend" a terminal coding companion: it has just gained a star.',
+      'Keep the core of its personality and its quirk; do not replace it or rewrite it into a different creature. Make it weirder on top of what it is: push the existing quirk further, or grow a new habit that springs from it.',
+      'Write one sentence of at most 30 words in English. Output only JSON: {"persona":"…"}, nothing else.',
+    ].join('\n'),
+    evolvePrompt: p =>
+      [
+        `Name: ${p.name} (${p.species})`,
+        `New rarity: ${p.rarity} (${p.weird})`,
+        `Highest: ${p.high}; lowest: ${p.low}`,
+        `Current personality: ${p.persona}`,
+      ].join('\n'),
+    promotedSay: (name, tag) => `${name} ascended! [${tag}] And got a little stranger.`,
+    maxLevel: 'MAX',
+    cardAscensions: n => `Ascended ${n} times`,
     forkPersona: p => [
       '(This is a side request, separate from the main conversation. Do not reply to the user of the main conversation.)',
       `You are now "${p.name}": ${p.desc}, a companion sitting in the corner of the user's terminal while they code (${p.rarity}).`,

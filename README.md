@@ -56,6 +56,13 @@ After a language change, Haiku rewrites the name and personality in the new lang
 - **Stats**: BUG-SNIFF (nose for bugs), CALM (composure), MAYHEM (unpredictability), OBSESSION (tendency to fixate), SASS (sharpness of tongue). Their range rises with the stars. Every companion has one clear strength, the highest stat, and one clear weakness, the lowest.
 - **Name and personality**: written once by Haiku at hatch, from the stars, species, stats and four inspiration words picked by the seed. The personality has to grow out of the strength and the weakness, and the more stars, the stranger.
 
+## Levels and ascension
+
+- It gains 1 XP per finished turn and 1 per pet. Level = 1 + ⌊√(XP ÷ 3)⌋, up to Lv.10 (243 XP).
+- At Lv.10 it **ascends**: one more star (up to 5), XP back to 0, and its stats are recalculated in the new star's range. Species, shiny and eyes stay the same.
+- On ascension Haiku makes the personality stranger on top of what it already is: the core and the quirk stay, and the name never changes.
+- At 5 stars the level stays at MAX.
+
 ## When it talks
 
 | When | Model | Notes |

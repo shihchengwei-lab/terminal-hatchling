@@ -81,7 +81,8 @@ function seeded(seed: string): () => number {
   }
 }
 
-export function deriveBuddy(seed: string): Buddy {
+/** ascensions：滿級升階的次數，每次星數 +1（最多 5 星）；屬性用同一組亂數、依新星數的範圍重算 */
+export function deriveBuddy(seed: string, ascensions = 0): Buddy {
   const rnd = seeded(seed)
   const pick = <T,>(list: readonly T[]): T => list[Math.floor(rnd() * list.length)] ?? list[0]!
 
@@ -96,6 +97,7 @@ export function deriveBuddy(seed: string): Buddy {
     }
     r -= RARITY_RATES[tier]
   }
+  rarity = Math.min(5, rarity + ascensions) as Rarity
   const isShiny = rnd() < SHINY_RATE
   const [lo, hi] = RARITY_STAT_RANGE[rarity]
   const stats = {} as BuddyStats
@@ -127,8 +129,28 @@ function isSave(v: unknown): v is Save {
   return typeof v === 'object' && v !== null && typeof (v as Save).seed === 'string' && typeof (v as Save).xp === 'number'
 }
 
+export const MAX_LEVEL = 10
+
 export function level(xp: number): number {
-  return 1 + Math.floor(Math.sqrt(xp / 3))
+  return Math.min(MAX_LEVEL, 1 + Math.floor(Math.sqrt(xp / 3)))
+}
+
+function buddyOf(s: Save): Buddy {
+  return deriveBuddy(s.seed, s.ascensions ?? 0)
+}
+
+/** 加經驗值；滿級且還沒到 5 星就升階：星數 +1、經驗值歸零 */
+export function addXp(s: Save, n: number): { next: Save; promoted: boolean } {
+  const xp = s.xp + n
+  const canAscend = buddyOf(s).rarity < 5
+  if (canAscend && level(xp) >= MAX_LEVEL) {
+    return { next: { ...s, xp: 0, ascensions: (s.ascensions ?? 0) + 1 }, promoted: true }
+  }
+  return { next: { ...s, xp }, promoted: false }
+}
+
+function levelText(s: Save): string {
+  return level(s.xp) >= MAX_LEVEL ? `Lv.${T().maxLevel}` : `Lv.${level(s.xp)}`
 }
 
 function nameOf(s: Save, b: Buddy): string {
@@ -199,24 +221,24 @@ export function parseSoul(text: string): Omit<Soul, 'species'> | null {
 }
 
 function card(s: Save): string {
-  const b = deriveBuddy(s.seed)
+  const b = buddyOf(s)
   const sp = speciesOf(b.species)
   const t = T()
   const stats = STAT_NAMES.map(
     k => `${t.stat[k]} ${'█'.repeat(Math.round(b.stats[k] / 10)).padEnd(10, '░')} ${b.stats[k]}`,
   )
   return [
-    `${nameOf(s, b)} (${speciesLabel(sp, lang)}) ${rarityTag(b)}  Lv.${level(s.xp)}`,
+    `${nameOf(s, b)} (${speciesLabel(sp, lang)}) ${rarityTag(b)}  ${levelText(s)}`,
     `${t.cardTrait}: ${traitText(b.trait, lang)}`,
     `${t.cardEyes}: ${eyeLabel(b.eyeStyle, lang)}`,
     ...stats,
     ...(s.soul ? [`${t.cardPersona}: ${s.soul.persona}`] : []),
-    `${t.cardPets(s.pets)} | ${s.seedSource === 'git' ? t.bindGit : t.bindRandom}`,
+    `${t.cardPets(s.pets)}${s.ascensions ? ` | ${t.cardAscensions(s.ascensions)}` : ''} | ${s.seedSource === 'git' ? t.bindGit : t.bindRandom}`,
   ].join('\n')
 }
 
 function persona(s: Save, ev?: BuddyEvent): string {
-  const b = deriveBuddy(s.seed)
+  const b = buddyOf(s)
   const sp = speciesOf(b.species)
   const t = T()
   return [
@@ -267,7 +289,8 @@ async function say($: EngineInterface, text: string, m: Mood): Promise<void> {
 }
 
 async function writeSoul($: EngineInterface, seed: string): Promise<void> {
-  const b = deriveBuddy(seed)
+  const before = await read($, save)
+  const b = deriveBuddy(seed, before?.seed === seed ? (before.ascensions ?? 0) : 0)
   const req = soulRequest(b, seed)
   const r = await $.model.complete({ model: SOUL_MODEL, ...req, maxTokens: 300, timeoutMs: SOUL_TIMEOUT_MS })
   const soul = r.isAnswered ? parseSoul(r.text) : null
@@ -339,7 +362,7 @@ export function isCalled(text: string, name: string): boolean {
 async function replyToCall($: EngineInterface, text: string): Promise<void> {
   const s = await read($, save)
   if (!s) return
-  const b = deriveBuddy(s.seed)
+  const b = buddyOf(s)
   const sp = speciesOf(b.species)
   const t = T()
   const r = await $.model.complete({
@@ -381,6 +404,53 @@ export function eventOf(tool: string, input: Record<string, unknown>, isError: b
 
 const EVENT_RANK: Record<BuddyEvent['kind'], number> = { 'big-edit': 1, 'error': 2, 'test-failed': 3 }
 
+export function parseEvolved(text: string): string | null {
+  const m = text.match(/\{[\s\S]*\}/)
+  if (!m) return null
+  try {
+    const v = JSON.parse(m[0]) as { persona?: unknown }
+    return typeof v.persona === 'string' && v.persona.trim() ? trimAtBoundary(v.persona.trim(), T().personaMax) : null
+  } catch {
+    return null
+  }
+}
+
+/** 升階後在原本的個性上變怪；名字不變，失敗就保留原個性 */
+async function evolvePersona($: EngineInterface): Promise<void> {
+  const s = await read($, save)
+  if (!s?.soul) return
+  const b = buddyOf(s)
+  const t = T()
+  const sorted = STAT_NAMES.slice().sort((x, y) => b.stats[y] - b.stats[x])
+  const high = sorted[0]!
+  const low = sorted[sorted.length - 1]!
+  const r = await $.model.complete({
+    model: SOUL_MODEL,
+    system: t.evolveSystem,
+    prompt: t.evolvePrompt({
+      name: nameOf(s, b),
+      species: speciesLabel(speciesOf(b.species), lang),
+      persona: s.soul.persona,
+      rarity: `${starsOf(b.rarity)} ${t.rarity[b.rarity]}`,
+      weird: t.weirdness[b.rarity],
+      high: `${t.stat[high]} ${b.stats[high]}`,
+      low: `${t.stat[low]} ${b.stats[low]}`,
+    }),
+    maxTokens: 300,
+    timeoutMs: SOUL_TIMEOUT_MS,
+  })
+  const persona = r.isAnswered ? parseEvolved(r.text) : null
+  const cur = await read($, save)
+  if (!persona || !cur?.soul || cur.seed !== s.seed) return
+  await commit($, { ...cur, soul: { ...cur.soul, persona } })
+}
+
+async function announcePromotion($: EngineInterface, s: Save): Promise<void> {
+  const b = buddyOf(s)
+  await say($, T().promotedSay(nameOf(s, b), rarityTag(b)), 'happy')
+  $.clock.after(0, () => evolvePersona($))
+}
+
 // ---------- hooks ----------
 
 export const register: Register = (on, options) => {
@@ -402,7 +472,7 @@ export const register: Register = (on, options) => {
     // 物種表、人設寫法或語言改過時，舊人設對不上，重寫一份
     const isStale =
       !!s?.soul &&
-      (s.soul.species !== deriveBuddy(s.seed).species || s.soul.v !== SOUL_VERSION || (s.soul.lang ?? 'zh-TW') !== lang)
+      (s.soul.species !== buddyOf(s).species || s.soul.v !== SOUL_VERSION || (s.soul.lang ?? 'zh-TW') !== lang)
     if (s && (s.soul === undefined || s.soul === null || isStale)) hatchSoul($, s.seed)
     $.clock.every(TICK_MS, async () => {
       await update($, frame, f => (f + 1) % 10_000)
@@ -419,7 +489,7 @@ export const register: Register = (on, options) => {
       if (left === 1) {
         const s = await read($, save)
         if (!s) return
-        const b = deriveBuddy(s.seed)
+        const b = buddyOf(s)
         await say($, T().hatchedSay(nameOf(s, b), rarityTag(b)), 'happy')
       }
     })
@@ -450,13 +520,14 @@ export const register: Register = (on, options) => {
 
     if (sub === 'pet') {
       if (!cur) return { text: T().noBuddy }
-      const s = { ...cur, pets: cur.pets + 1, xp: cur.xp + 1 }
+      const { next: s, promoted } = addXp({ ...cur, pets: cur.pets + 1 }, 1)
       await commit($, s)
-      const b = deriveBuddy(s.seed)
-      await say($, T().petSay(nameOf(s, b)), 'happy')
+      const b = buddyOf(s)
       await update($, petTicks, () => PET_TICKS)
       lastActiveAt = await $.clock.now()
-      return { text: T().petted(nameOf(s, b), level(s.xp)) }
+      if (promoted) await announcePromotion($, s)
+      else await say($, T().petSay(nameOf(s, b)), 'happy')
+      return { text: `${T().petted(nameOf(s, b), level(s.xp))}${promoted ? `\n${T().promotedSay(nameOf(s, b), rarityTag(b))}` : ''}` }
     }
 
     return { text: T().usage }
@@ -469,7 +540,7 @@ export const register: Register = (on, options) => {
     if ((await read($, mood)) === 'sleepy') await update($, mood, () => 'idle')
     const s = await read($, save)
     if (s && !s.isHidden && (await read($, hatchTicks)) === 0) {
-      const name = nameOf(s, deriveBuddy(s.seed))
+      const name = nameOf(s, buddyOf(s))
       if (isCalled(e.text, name)) {
         // 被叫到了：回完這句，這輪結束時先不再評論
         lastForkAt = await $.clock.now()
@@ -501,8 +572,15 @@ export const register: Register = (on, options) => {
 
     const loaded = await load($)
     if (!loaded) return result
-    const s = { ...loaded, xp: loaded.xp + 1 }
+    const { next: s, promoted } = addXp(loaded, 1)
     await commit($, s)
+    if (promoted) {
+      await announcePromotion($, s)
+      // 升階這輪由升階訊息當主角，不再評論
+      pendingEvent = null
+      lastForkAt = await $.clock.now()
+      return result
+    }
     await update($, mood, () => (e.reason === 'answer' ? 'idle' : 'worried'))
 
     const ev = pendingEvent
@@ -561,7 +639,7 @@ export const register: Register = (on, options) => {
         </Box>
       )
     }
-    const b = deriveBuddy(s.seed)
+    const b = buddyOf(s)
     const sp = speciesOf(b.species)
     const color = RARITY_COLOR[b.rarity]
     const art = renderArt(sp.art, eyeStyleOf(b.eyeStyle).eyes)
@@ -586,7 +664,7 @@ export const register: Register = (on, options) => {
         </Box>
         <Text bold>
           {nameOf(s, b)}
-          <Text dimColor> Lv.{level(s.xp)}</Text>
+          <Text dimColor> {levelText(s)}</Text>
         </Text>
         <Box marginY={1}>
           <Text italic dimColor wrap="wrap">
@@ -617,7 +695,7 @@ export const register: Register = (on, options) => {
     const { Box, Text } = $.ui.resolve(e)
     const f = await read($, frame)
     const left = await read($, hatchTicks)
-    const b = deriveBuddy(s.seed)
+    const b = buddyOf(s)
 
     let art: string[]
     let color: string
@@ -646,7 +724,7 @@ export const register: Register = (on, options) => {
             ? { text: ZZZ_FRAMES[f % ZZZ_FRAMES.length] ?? '', color: 'gray' }
             : { text: ' ', color: 'white' }
       color = b.isShiny ? (SHINY_COLORS[f % SHINY_COLORS.length] ?? 'white') : RARITY_COLOR[b.rarity]
-      title = `${nameOf(s, b)} ${b.isShiny ? '✦' : ''}${starsOf(b.rarity)} Lv.${level(s.xp)}`
+      title = `${nameOf(s, b)} ${b.isShiny ? '✦' : ''}${starsOf(b.rarity)} ${levelText(s)}`
       const q = await read($, quip)
       bubble = q?.text ?? T().watching(nameOf(s, b))
       isDim = !q
