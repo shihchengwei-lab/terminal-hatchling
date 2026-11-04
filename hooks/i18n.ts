@@ -20,6 +20,9 @@ type Strings = {
   // 孵化
   soulSystem: string
   soulPrompt: (p: { rarity: string; weird: string; shiny: boolean; species: string; desc: string; stats: string; high: string; low: string; words: string }) => string
+  // 改語言或改寫法時重寫：保留原本的名字和怪癖
+  preserveSystem: string
+  preservePrompt: (p: { name: string; species: string; persona: string }) => string
   // 滿級升階：在原本的個性上變怪
   evolveSystem: string
   evolvePrompt: (p: { name: string; species: string; persona: string; rarity: string; weird: string; high: string; low: string }) => string
@@ -95,6 +98,13 @@ export const STRINGS: Record<Lang, Strings> = {
         `最高：${p.high}；最低：${p.low}`,
         `靈感詞：${p.words}`,
       ].join('\n'),
+    preserveSystem: [
+      '你負責整理一隻終端機寫程式夥伴的設定。',
+      '保留牠原本的名字、個性核心和所有怪癖，不要變得更普通，也不要換成另一隻。',
+      '只把個性改寫成一句不超過 50 字的台灣繁體中文；名字如果不是中文，就自然地翻譯或音譯成 2 到 4 個中文字，是中文就照抄。',
+      '只輸出 JSON：{"name":"…","persona":"…"}，不要其他文字。',
+    ].join('\n'),
+    preservePrompt: p => [`名字：${p.name}（${p.species}）`, `原本的個性：${p.persona}`].join('\n'),
     evolveSystem: [
       '你負責讓一隻終端機寫程式夥伴「升階」：牠剛升了一顆星。',
       '保留牠原本的個性核心和怪癖，不要換掉或重寫成另一隻；在原本的基礎上變得更怪：把原有的怪癖推得更極端，或長出一個跟原本怪癖有關的新毛病。',
@@ -187,6 +197,13 @@ export const STRINGS: Record<Lang, Strings> = {
         `Highest: ${p.high}; lowest: ${p.low}`,
         `Inspiration words: ${p.words}`,
       ].join('\n'),
+    preserveSystem: [
+      'You tidy up the profile of a terminal coding companion.',
+      'Keep its name, the core of its personality and every quirk. Do not make it more ordinary and do not turn it into a different creature.',
+      'Only rewrite the personality as one sentence of at most 30 words in English; if the name is not in English, translate or transliterate it naturally into one word of at most 12 characters, otherwise keep it exactly.',
+      'Output only JSON: {"name":"…","persona":"…"}, nothing else.',
+    ].join('\n'),
+    preservePrompt: p => [`Name: ${p.name} (${p.species})`, `Current personality: ${p.persona}`].join('\n'),
     evolveSystem: [
       'You "ascend" a terminal coding companion: it has just gained a star.',
       'Keep the core of its personality and its quirk; do not replace it or rewrite it into a different creature. Make it weirder on top of what it is: push the existing quirk further, or grow a new habit that springs from it.',

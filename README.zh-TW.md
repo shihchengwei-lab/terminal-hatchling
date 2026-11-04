@@ -46,7 +46,7 @@ claude plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal
 - `en`：英文。
 - `zh-TW`：台灣繁體中文。
 
-換語言後，下次開 session 時 Haiku 會用新語言重寫名字和個性（自己取的名字會保留）。
+換語言後，下次開 session 時 Haiku 會以現有的名字和個性為底，用新語言改寫：升階累積的怪癖會保留，名字會翻譯或音譯，不會換成新名字。
 
 ## 夥伴怎麼決定
 

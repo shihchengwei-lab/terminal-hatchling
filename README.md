@@ -46,7 +46,7 @@ The companion speaks English or Traditional Chinese, set by the `language` optio
 - `en`: English.
 - `zh-TW`: Traditional Chinese (Taiwan).
 
-After a language change, Haiku rewrites the name and personality in the new language at the next session start. A name you gave it yourself is kept.
+After a language change, Haiku rewrites the name and personality in the new language at the next session start, starting from the current ones: the quirks it gained from ascending are kept, and the name is translated or transliterated rather than replaced.
 
 ## How a companion is decided
 

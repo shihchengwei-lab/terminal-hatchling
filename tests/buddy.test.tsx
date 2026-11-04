@@ -440,3 +440,47 @@ test('ascending keeps the name and evolves the old personality instead of replac
   expect(c.text).toContain('升階 1 次')
   expect(c.text).toContain('Lv.1')
 })
+
+test('a language change rewrites from the old personality and keeps its quirks; a new species starts over', ZH, async ($, on) => {
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return { value: { isAnswered: true, text: '{"name":"文尼克","persona":"冷靜到可疑，堅持每行都藏著陷阱，連註解錯字都逐字唸。"}', usage: USAGE } }
+  })
+  const clock = await start($, on, {
+    'buddy.bound.v1': {
+      ...SAVE_X, ascensions: 1,
+      soul: { name: 'Vinnick', persona: 'Calm to the point of suspicion; now also reads typos in comments aloud.', species: deriveBuddy('x').species, v: 4, lang: 'en' },
+    },
+  })
+  await clock.settle()
+  expect(reqs.length).toBe(1)
+  expect(reqs[0].system).toContain('保留牠原本的名字、個性核心和所有怪癖')
+  expect(reqs[0].prompt).toContain('reads typos in comments aloud')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('文尼克')
+  expect(c.text).toContain('逐字唸')
+})
+
+test('a soul written for another species is replaced with a fresh one', ZH, async ($, on) => {
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return { value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }
+  })
+  const clock = await start($, on, {
+    'buddy.bound.v1': { ...SAVE_X, soul: { name: '舊名', persona: '茶壺人設', species: 'kettle', v: 4, lang: 'zh-TW' } },
+  })
+  await clock.settle()
+  expect(reqs[0].system).toContain('一句話個性')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('鍋巴')
+})
+
+test('if the rewrite fails the old personality stays', ZH, async ($, on) => {
+  on('model.complete', () => ({ value: { isAnswered: false, reason: 'empty-reply', usage: USAGE } }))
+  const clock = await start($, on, { 'buddy.bound.v1': { ...SAVE_X, soul: { ...SAVE_X.soul, v: 3 } } })
+  await clock.settle()
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('愛碎念')
+})

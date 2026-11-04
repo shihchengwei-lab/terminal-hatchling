@@ -300,18 +300,28 @@ async function say($: EngineInterface, text: string, m: Mood): Promise<void> {
 async function writeSoul($: EngineInterface, seed: string): Promise<void> {
   const before = await read($, save)
   const b = deriveBuddy(seed, before?.seed === seed ? (before.ascensions ?? 0) : 0)
-  const req = soulRequest(b, seed)
+  const prev = before?.seed === seed ? before.soul : null
+  // 同一隻（物種沒變）只是換語言或改寫法：拿原本的名字和個性去改寫，保留升階累積的怪癖
+  const isPreserve = !!prev && prev.species === b.species
+  const req = isPreserve
+    ? {
+        system: T().preserveSystem,
+        prompt: T().preservePrompt({ name: prev.name, species: speciesLabel(speciesOf(b.species), lang), persona: prev.persona }),
+      }
+    : soulRequest(b, seed)
   const r = await $.model.complete({ model: SOUL_MODEL, ...req, maxTokens: 300, timeoutMs: SOUL_TIMEOUT_MS })
   const soul = r.isAnswered ? parseSoul(r.text) : null
   const cur = await read($, save)
   // 孵化期間換了種子就丟掉這份
   if (!cur || cur.seed !== seed) return
-  // 只是改寫法重寫時，保留原本的名字（物種和語言沒變才算同一隻）
-  const keepName = cur.soul && cur.soul.species === b.species && (cur.soul.lang ?? 'zh-TW') === lang ? cur.soul.name : null
-  await commit($, {
-    ...cur,
-    soul: soul ? { ...soul, name: keepName ?? soul.name, species: b.species, v: SOUL_VERSION, lang } : null,
-  })
+  if (!soul) {
+    // 重寫失敗時保留原本的設定，不要清掉
+    if (!isPreserve) await commit($, { ...cur, soul: null })
+    return
+  }
+  // 語言沒變時名字一字不改
+  const name = isPreserve && (prev.lang ?? 'zh-TW') === lang ? prev.name : soul.name
+  await commit($, { ...cur, soul: { ...soul, name, species: b.species, v: SOUL_VERSION, lang } })
 }
 
 let soulPendingFor: string | null = null
