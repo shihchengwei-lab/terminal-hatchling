@@ -4,6 +4,8 @@ import type { Buddy, BuddyEvent, Lang, Mood, Quip, Save, Soul } from '../types'
 import { inspirationIndexes, buddyOf, levelOf, MAX_LEVEL } from './derive'
 import { STRINGS } from './i18n'
 import {
+  LEGENDARY_PRINCIPLES,
+  MAX_STARS,
   STAT_NAMES,
   eyeLabel,
   inspirationText,
@@ -52,9 +54,14 @@ function extremes(b: Buddy, lang: Lang): { high: string; low: string } {
   }
 }
 
-/** 有最高原則的物種：每個提示詞都多這一行 */
+/** 夥伴的最高原則：物種自己的優先，否則傳說級依強項挑一條，其餘沒有 */
+export function creedOf(b: Buddy): string | null {
+  return speciesOf(b.species).creed ?? (b.rarity === MAX_STARS ? LEGENDARY_PRINCIPLES[b.strength] : null)
+}
+
+/** 有最高原則時，每個提示詞都多這一行 */
 function creedLines(b: Buddy, lang: Lang): string[] {
-  const creed = speciesOf(b.species).creed
+  const creed = creedOf(b)
   return creed ? [STRINGS[lang].creedLine(creed)] : []
 }
 

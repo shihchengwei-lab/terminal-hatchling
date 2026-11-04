@@ -33,6 +33,18 @@ export const HIDDEN_SPECIES: Species[] = [
 ]
 export const HIDDEN_RATE = 0.01
 
+/**
+ * 傳說級（5 星）夥伴的最高原則：依強項挑一條。有自己原則的物種（例如烏鴉）用自己的。
+ * 抓蟲→不合法狀態、定力→單向因果、脫序→局部可預測、執念→單一來源、酸度→必要複雜度。
+ */
+export const LEGENDARY_PRINCIPLES: Record<StatName, string> = {
+  bugsniff: 'Invalid states: make invalid states impossible to construct, including states forbidden by explicit task constraints.',
+  calm: 'Causal direction: let causes produce effects in one direction; avoid competing update orders.',
+  mayhem: 'Local predictability: make local behavior easy to understand and predict; avoid hidden side effects and dependencies.',
+  obsession: 'Single source: give each fact one authoritative source; derive views instead of synchronizing copies.',
+  sass: 'Necessary complexity: keep necessary complexity at real boundaries and the core path direct; abstractions should simplify the whole path while keeping responsibilities clear.',
+}
+
 /** 星數上限：升階最多升到這裡 */
 export const MAX_STARS: Rarity = 5
 export const RARITY_RATES: Record<Rarity, number> = { 1: 0.6, 2: 0.25, 3: 0.1, 4: 0.04, 5: 0.01 }

@@ -1,9 +1,10 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 import { addXp, deriveBuddy, level } from '../hooks/derive'
-import { inspirationsOf, trimAtBoundary } from '../hooks/prompts'
+import { creedOf, inspirationsOf, trimAtBoundary } from '../hooks/prompts'
 import { moodOf } from '../hooks/register'
 import { parseSave } from '../hooks/save'
+import { LEGENDARY_PRINCIPLES } from '../hooks/species'
 
 const ZH = { options: { language: 'zh-TW' } }
 const EN = { options: { language: 'en' } }
@@ -649,4 +650,40 @@ test('the mood shown is derived, with one fixed priority', async () => {
   expect(moodOf({ ...base, pending: { kind: 'error', detail: '' }, quip: { text: 'x', mood: 'happy', at: 999_000 } })).toBe('worried')
   expect(moodOf({ ...base, lastActiveAt: 0, pending: { kind: 'error', detail: '' } })).toBe('sleepy')
   expect(moodOf({ ...base, isWorking: true, lastActiveAt: 0 })).toBe('busy')
+})
+
+test('legendary companions get the principle that matches their strength; the crow keeps its own', ZH, async ($, on) => {
+  const seen = new Map<string, string>()
+  for (let i = 0; i < 20000 && seen.size < 5; i += 1) {
+    const b = deriveBuddy(`L-${i}`)
+    if (b.rarity === 5 && b.species !== 'crow') seen.set(b.strength, creedOf(b)!)
+    if (b.rarity < 5 && b.species !== 'crow') expect(creedOf(b)).toBe(null)
+  }
+  expect(seen.get('bugsniff')).toMatch(/^Invalid states:/)
+  expect(seen.get('calm')).toMatch(/^Causal direction:/)
+  expect(seen.get('mayhem')).toMatch(/^Local predictability:/)
+  expect(seen.get('obsession')).toMatch(/^Single source:/)
+  expect(seen.get('sass')).toMatch(/^Necessary complexity:/)
+
+  // 升階到 5 星的那一刻起，提示詞就帶上原則
+  let seed = ''
+  for (let i = 0; !seed; i += 1) {
+    const b = deriveBuddy(`L4-${i}`)
+    if (b.rarity === 4 && b.species !== 'crow') seed = `L4-${i}`
+  }
+  expect(creedOf(deriveBuddy(seed, 0))).toBe(null)
+  expect(creedOf(deriveBuddy(seed, 1))).toBe(LEGENDARY_PRINCIPLES[deriveBuddy(seed).strength])
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return { value: { isAnswered: true, text: '{"persona":"更怪了"}', usage: USAGE } }
+  })
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  const clock = await start($, on, {
+    'buddy.bound.v1': { ...SAVE_X, seed, xp: 1943, soul: { name: '阿丸', persona: '原本的', species: deriveBuddy(seed).species, v: 4, lang: 'zh-TW' } },
+  })
+  await $.turn.complete({ answer: '好', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  expect(reqs.length).toBe(1)
+  expect(reqs[0].system).toContain(creedOf(deriveBuddy(seed, 1))!)
 })
