@@ -21,6 +21,7 @@ import {
   TRAITS,
   eyeLabel,
   eyeStyleOf,
+  fixedPersonaOf,
   inspirationText,
   renderArt,
   speciesDesc,
@@ -314,7 +315,13 @@ async function writeSoul($: EngineInterface, seed: string): Promise<void> {
       }
     : soulRequest(b, seed)
   const r = await $.model.complete({ model: SOUL_MODEL, ...req, maxTokens: 300, timeoutMs: SOUL_TIMEOUT_MS })
-  const soul = r.isAnswered ? parseSoul(r.text) : null
+  const parsed = r.isAnswered ? parseSoul(r.text) : null
+  const sp = speciesOf(b.species)
+  const fixed = fixedPersonaOf(sp, lang)
+  // 固定個性的物種：個性一律用固定的那句；Haiku 失敗時名字用物種名
+  const soul = fixed
+    ? { name: parsed?.name ?? (isPreserve ? prev.name : speciesLabel(sp, lang)), persona: fixed }
+    : parsed
   const cur = await read($, save)
   // 孵化期間換了種子就丟掉這份
   if (!cur || cur.seed !== seed) return
@@ -443,6 +450,8 @@ async function evolvePersona($: EngineInterface): Promise<void> {
   const s = await read($, save)
   if (!s?.soul) return
   const b = buddyOf(s)
+  // 固定個性的物種升階時不改個性
+  if (fixedPersonaOf(speciesOf(b.species), lang)) return
   const t = T()
   const sorted = STAT_NAMES.slice().sort((x, y) => b.stats[y] - b.stats[x])
   const high = sorted[0]!
@@ -667,7 +676,8 @@ export const register: Register = (on, options) => {
     const color = RARITY_COLOR[b.rarity]
     const art = renderArt(sp.art, eyeStyleOf(b.eyeStyle).eyes)
     const t = T()
-    const persona = s.soul?.persona ?? t.cardFallbackPersona(speciesDesc(sp, lang), traitText(b.trait, lang))
+    const persona =
+      fixedPersonaOf(sp, lang) ?? s.soul?.persona ?? t.cardFallbackPersona(speciesDesc(sp, lang), traitText(b.trait, lang))
 
     return (
       <Box flexDirection="column" borderStyle="round" borderColor={color} paddingX={2} paddingY={1} width={44}>

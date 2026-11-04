@@ -504,3 +504,35 @@ test('about 1% hatch as the hidden species; nothing else about them changes', ZH
   expect((await ui.find({ type: 'Text', text: /==>/ }))?.text).toContain('==>')
   await ui.unmount()
 })
+
+test('the hidden species always has its fixed personality, through hatch, failure and ascension', ZH, async ($, on) => {
+  let crowSeed = ''
+  for (let i = 0; !crowSeed; i += 1) {
+    const b = deriveBuddy(`h-${i}`)
+    if (b.species === 'crow' && b.rarity === 1) crowSeed = `h-${i}`
+  }
+  const reqs: any[] = []
+  on('model.complete', (_: unknown, e: any) => {
+    reqs.push(e)
+    return reqs.length === 1
+      ? { value: { isAnswered: true, text: '{"name":"黑豆","persona":"Haiku 亂寫的個性"}', usage: USAGE } }
+      : { value: { isAnswered: true, text: '{"persona":"升階亂改的個性"}', usage: USAGE } }
+  })
+  on('process.run', () => ({ value: { exitCode: 1, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  const clock = await start($, on, {
+    'buddy.bound.v1': { ...SAVE_X, seed: crowSeed, xp: 242, soul: null },
+  })
+  await clock.settle()
+  let c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('黑豆')
+  expect(c.text).toContain('Make invalid states impossible to construct')
+  expect(c.text).not.toContain('Haiku 亂寫')
+
+  await $.turn.complete({ answer: '好', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('升階 1 次')
+  expect(c.text).toContain('Make invalid states impossible to construct')
+  expect(c.text).not.toContain('升階亂改')
+})
