@@ -43,7 +43,7 @@ const STORE_KEY = 'buddy.bound.v1'
 const SOUL_MODEL = 'haiku'
 const SOUL_TIMEOUT_MS = 30_000
 /** 人設格式的版本：改寫法時加一，舊人設會重寫 */
-const SOUL_VERSION = 3
+const SOUL_VERSION = 4
 const HATCH_TICKS = 6
 const TICK_MS = 500
 const MIN_ANSWER_CHARS = 80
@@ -175,13 +175,23 @@ function soulRequest(b: Buddy, seed: string): { system: string; prompt: string }
   }
 }
 
+/** 太長時退回到上限內最後一個句號、逗號或空白，不切在字中間 */
+export function trimAtBoundary(text: string, max: number): string {
+  if (text.length <= max) return text
+  const head = text.slice(0, max)
+  const cut = Math.max(...['。', '！', '？', '. ', '! ', '? '].map(p => head.lastIndexOf(p)))
+  if (cut >= max * 0.5) return head.slice(0, cut + 1).trim()
+  const soft = Math.max(...['，', '、', '；', ', ', '; ', ' '].map(p => head.lastIndexOf(p)))
+  return `${(soft >= max * 0.5 ? head.slice(0, soft) : head).replace(/[，、；,;\s]+$/, '')}…`
+}
+
 export function parseSoul(text: string): Omit<Soul, 'species'> | null {
   const m = text.match(/\{[\s\S]*\}/)
   if (!m) return null
   try {
     const v = JSON.parse(m[0]) as { name?: unknown; persona?: unknown }
     const name = typeof v.name === 'string' ? v.name.trim().slice(0, 12) : ''
-    const persona = typeof v.persona === 'string' ? v.persona.trim().slice(0, T().personaMax) : ''
+    const persona = typeof v.persona === 'string' ? trimAtBoundary(v.persona.trim(), T().personaMax) : ''
     return name && persona ? { name, persona } : null
   } catch {
     return null
@@ -264,7 +274,12 @@ async function writeSoul($: EngineInterface, seed: string): Promise<void> {
   const cur = await read($, save)
   // 孵化期間換了種子就丟掉這份
   if (!cur || cur.seed !== seed) return
-  await commit($, { ...cur, soul: soul ? { ...soul, species: b.species, v: SOUL_VERSION, lang } : null })
+  // 只是改寫法重寫時，保留原本的名字（物種和語言沒變才算同一隻）
+  const keepName = cur.soul && cur.soul.species === b.species && (cur.soul.lang ?? 'zh-TW') === lang ? cur.soul.name : null
+  await commit($, {
+    ...cur,
+    soul: soul ? { ...soul, name: keepName ?? soul.name, species: b.species, v: SOUL_VERSION, lang } : null,
+  })
 }
 
 let soulPendingFor: string | null = null

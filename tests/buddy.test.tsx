@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { deriveBuddy, inspirationsOf } from '../hooks/register'
+import { deriveBuddy, inspirationsOf, trimAtBoundary } from '../hooks/register'
 
 const ZH = { options: { language: 'zh-TW' } }
 const EN = { options: { language: 'en' } }
@@ -9,7 +9,7 @@ const BAND = { plugin: 'terminal-hatchling', component: 'AbovePrompt', props: { 
 const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const SOUL_REPLY = '{"name":"鍋巴","persona":"看到沒關的檔案就會偷偷蓋上鍋蓋。"}'
 const SAVE_X = {
-  seed: 'x', soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 3 },
+  seed: 'x', soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 4 },
   name: null, xp: 0, pets: 0, isHidden: false,
 }
 const CARD_ROW = (text: string, args = '') => ({
@@ -358,4 +358,26 @@ test('every companion has one clear strength and one clear weakness; the hatch p
   await clock.advance(5000)
   expect(reqs[0].prompt).toMatch(/最高：(抓蟲|定力|脫序|執念|酸度) \d+；最低：(抓蟲|定力|脫序|執念|酸度) \d+/)
   expect(reqs[0].system).toContain('強項要強到變成毛病')
+})
+
+test('a long personality is cut at a word or sentence boundary, never mid-word', async () => {
+  const long = "Vinnick is a fox so unshakably calm that it reads every function with the same flat, record-player patience, declares the code 'almost certainly a trap' in a tone like a calculator's display, and then refuses to say which trap, since its notes are classified."
+  const t = trimAtBoundary(long, 260)
+  expect(t.length).toBeLessThanOrEqual(261)
+  expect(t.endsWith('…') || t.endsWith('.')).toBe(true)
+  expect(t).not.toMatch(/ no…$/)
+  expect(trimAtBoundary('短的。', 80)).toBe('短的。')
+  const zh = '牠看到變數名稱不順眼就會整晚碎念，堅持把每個 i 改成 indexOfTheThingWeAreLookingAt，還會在註解裡偷偷寫詩，然後否認那是牠寫的，最後再把詩刪掉假裝沒發生過這件事情。'
+  const tz = trimAtBoundary(zh, 40)
+  expect(tz.length).toBeLessThanOrEqual(41)
+  expect(tz.endsWith('…') || tz.endsWith('。')).toBe(true)
+})
+
+test('rewriting an old-format persona keeps the name', ZH, async ($, on) => {
+  on('model.complete', () => ({ value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }))
+  const clock = await start($, on, { 'buddy.bound.v1': { ...SAVE_X, soul: { ...SAVE_X.soul, v: 3 } } })
+  await clock.settle()
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('阿丸')
+  expect(c.text).toContain('鍋蓋')
 })
