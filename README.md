@@ -62,7 +62,6 @@ After a language change, Haiku rewrites the name and personality in the new lang
 - At Lv.10 it **ascends**: one more star (up to 5), XP back to 0, and its stats are recalculated in the new star's range. Species, shiny and eyes stay the same.
 - On ascension Haiku makes the personality stranger on top of what it already is: the core and the quirk stay, and the name never changes.
 - At 5 stars the level stays at MAX.
-- A Legendary (5-star) companion holds one principle of code, picked by its strength: BUG-SNIFF → invalid states, CALM → causal direction, MAYHEM → local predictability, OBSESSION → single source, SASS → necessary complexity. Its personality and every remark revolve around it, from the moment it reaches 5 stars.
 
 ## When it talks
 
