@@ -75,9 +75,24 @@ Animations that need no model: blinking, an occasional wiggle, a busy look while
 
 ## Cost and data
 
-- Every model call goes through your own Claude Code session's account and usage. There is no extra backend.
-- `model.fork` reads this session's own transcript (served from the prompt cache). Haiku receives only the personality and the one message or event summary.
-- To stop spending, hide the companion with `/buddy`.
+Every model call goes through your own Claude Code session's account and usage. There is no extra backend. Prices change, so this lists calls and tokens, not amounts.
+
+**Comments (the main cost)**
+
+- A comment is a `model.fork` request on **the session's own model**. If your session runs Opus, each comment is an Opus request.
+- Each comment re-reads the whole conversation so far. It is served from the prompt cache, which is cheaper than fresh input, but the longer the session, the more cached tokens every comment reads.
+- How often: at most once every 45 seconds, and only after an answer of at least 80 characters; a turn with failed tests, a tool error or a write of 80+ lines always gets one.
+- Fork requests are counted in the session's cost total.
+
+**Haiku calls (small)**
+
+- One call each when it hatches, when you mention its name, when it ascends, and when its personality is rewritten after a language change or a prompt update.
+- Haiku receives only the personality and that one message or event summary, never the conversation.
+- These calls are billed to your account but are not shown in the session's cost total.
+
+**Stopping and data**
+
+- Hide the companion with `/buddy` and it makes no model calls at all.
 - The save lives in this plugin's own JSON file under your Claude Code configuration directory.
 
 ## Development

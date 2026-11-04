@@ -75,9 +75,24 @@ claude plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal
 
 ## 費用與資料
 
-- 所有模型呼叫都走你自己 Claude Code session 的帳號與用量，沒有額外的後端服務。
-- 評論用的 `model.fork` 讀的是這個 session 本身的對話紀錄（從 prompt cache 讀取）；Haiku 只收到人設和那一則訊息或事件摘要。
-- 不想花費時，`/buddy` 把夥伴藏起來即可。
+所有模型呼叫都走你自己 Claude Code session 的帳號與用量，沒有額外的後端服務。價格會變動，所以這裡只列次數和 token，不寫金額。
+
+**評論（花費的大頭）**
+
+- 每次評論是一次 `model.fork` 請求，用的是 **session 本身的模型**。如果你的 session 用 Opus，每次評論就是一次 Opus 請求。
+- 每次評論都會重讀到目前為止的整段對話。這部分從 prompt cache 讀取，比一般輸入便宜，但 session 越長，每次評論讀的快取 token 越多。
+- 頻率：平常最多每 45 秒一次，而且回答要 80 字以上；那一輪有測試失敗、工具出錯或一次寫入 80 行以上時，一定評論。
+- fork 的費用會算進 session 的花費統計。
+
+**Haiku 呼叫（小額）**
+
+- 孵化、你提到牠的名字、升階、換語言或人設寫法更新而重寫個性時，各呼叫一次。
+- Haiku 只收到人設和那一則訊息或事件摘要，不會收到對話紀錄。
+- 這些呼叫從你的帳號扣，但不會出現在 session 的花費統計裡。
+
+**停止花費與資料**
+
+- 用 `/buddy` 把夥伴藏起來，就完全不呼叫任何模型。
 - 存檔在 Claude Code 設定資料夾底下這個 plugin 自己的 JSON 檔。
 
 ## 開發
