@@ -5,12 +5,17 @@ English | [繁體中文](README.zh-TW.md)
 A Claude Code mod that hatches a small creature above your prompt. Its species, stars and stats are fixed by a seed. When it hatches, Haiku writes its name and a one-line personality once. After that it glances at the conversation at the end of each turn and, now and then, says something in its own voice.
 
 ```
- /\_/\       Crumbs ★★★☆☆ Lv.3
-( • • )     ╭────────────────────────────────────────────╮
-(  ^  )     │ Those tests are red; maybe hold the commit. │
- /|   |\    ╰────────────────────────────────────────────╯
-(_|___|_)
+ /\     /\        Vinnick ★☆☆☆☆ Lv.2
+/  \___/  \       ╭─────────────────────────────────────────────╮
+\   @ @   /  _    │ Lovely refactor. Calmly noting it is almost │
+ \   v   /  / )   │ certainly a trap. Which trap? Classified.   │
+  )     (__/ /    ╰─────────────────────────────────────────────╯
+ (__|_|__)__/
 ```
+
+Vinnick's personality, as Haiku wrote it at hatch:
+
+> An unflappable fox who calmly insists every line hides a trap, mildly rejects any variable name it finds unserious, and has never once surprised anyone, which it finds suspicious.
 
 ## Install
 
