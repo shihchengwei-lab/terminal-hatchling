@@ -33,9 +33,9 @@ export const HIDDEN_SPECIES: Species[] = [
 ]
 export const HIDDEN_RATE = 0.01
 
-export const RARITY_ORDER: Rarity[] = [1, 2, 3, 4, 5]
+/** 星數上限：升階最多升到這裡 */
+export const MAX_STARS: Rarity = 5
 export const RARITY_RATES: Record<Rarity, number> = { 1: 0.6, 2: 0.25, 3: 0.1, 4: 0.04, 5: 0.01 }
-export const RARITY_LABEL: Record<Rarity, string> = { 1: '普通', 2: '少見', 3: '稀有', 4: '史詩', 5: '傳說' }
 export const RARITY_COLOR: Record<Rarity, string> = { 1: 'white', 2: 'green', 3: 'cyan', 4: 'magenta', 5: 'yellow' }
 export const RARITY_STAT_RANGE: Record<Rarity, [number, number]> = {
   1: [10, 40],

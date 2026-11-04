@@ -92,7 +92,7 @@ Every model call goes through your own Claude Code session's account and usage. 
 
 **Stopping and data**
 
-- Hide the companion with `/buddy` and it makes no model calls at all.
+- Hide the companion with `/buddy` and it makes no model calls at all. While hidden it also gains no XP; a personality rewrite that was due is done when you show it again.
 - The save lives in this plugin's own JSON file under your Claude Code configuration directory.
 
 ## Development

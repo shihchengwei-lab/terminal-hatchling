@@ -92,7 +92,7 @@ claude plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal
 
 **停止花費與資料**
 
-- 用 `/buddy` 把夥伴藏起來，就完全不呼叫任何模型。
+- 用 `/buddy` 把夥伴藏起來，就完全不呼叫任何模型。藏著時也不加經驗值；該重寫的個性會在叫出來時補上。
 - 存檔在 Claude Code 設定資料夾底下這個 plugin 自己的 JSON 檔。
 
 ## 開發

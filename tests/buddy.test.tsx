@@ -1,6 +1,9 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { addXp, deriveBuddy, inspirationsOf, level, parseSave, trimAtBoundary } from '../hooks/register'
+import { addXp, deriveBuddy, level } from '../hooks/derive'
+import { inspirationsOf, trimAtBoundary } from '../hooks/prompts'
+import { moodOf } from '../hooks/register'
+import { parseSave } from '../hooks/save'
 
 const ZH = { options: { language: 'zh-TW' } }
 const EN = { options: { language: 'en' } }
@@ -63,7 +66,12 @@ test('nothing shows and nothing is called until the first /buddy hatches an egg'
 
   const r = await $.command.run({ command: 'buddy', args: '' })
   expect(r.text).toContain('孵化')
-  ui = await $.ui.mount({ ...CARD_ROW(r.text), surface: 'desktop' })
+  // 孵化中：輸入框上方畫蛋，/buddy card 也畫蛋
+  ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /孵化中/ }))?.text).toBe('孵化中…')
+  await ui.unmount()
+  const egg = await $.command.run({ command: 'buddy', args: 'card' })
+  ui = await $.ui.mount({ ...CARD_ROW(egg.text, 'card'), surface: 'desktop' })
   expect((await ui.find({ type: 'Text', text: /孵化中/ }))?.text).toBe('孵化中…')
   await ui.unmount()
 
@@ -72,7 +80,7 @@ test('nothing shows and nothing is called until the first /buddy hatches an egg'
   expect(reqs[0].model).toBe('haiku')
   expect(reqs[0].system).toContain('一句話個性')
   expect(reqs[0].prompt).toMatch(/靈感詞：(\S+、){4}/)
-  expect(inspirationsOf('x')).toEqual(inspirationsOf('x'))
+  expect(inspirationsOf('x', 'zh-TW')).toEqual(inspirationsOf('x', 'zh-TW'))
   ui = await $.ui.mount({ ...BAND, surface: 'mobile' })
   expect((await ui.find({ type: 'Text', text: /鍋巴 孵出來了/ }))?.text).toContain('鍋巴')
   await ui.unmount()
@@ -595,4 +603,50 @@ test('an old save on disk is migrated once and keeps its companion', ZH, async (
   expect(c.text).toContain('阿丸')
   expect(c.text).toContain('愛碎念')
   expect(c.text).toContain('被摸 1 次')
+})
+
+test('while hidden nothing calls a model and no xp is gained; showing it again catches up', ZH, async ($, on) => {
+  const completes: any[] = []
+  let forks = 0
+  on('model.complete', (_: unknown, e: any) => {
+    completes.push(e)
+    return { value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }
+  })
+  on('model.fork', () => {
+    forks += 1
+    return { value: { isAnswered: true, text: 'idle|嗯', usage: USAGE } }
+  })
+  on('tool.call', () => ({ isError: true, result: 'x', text: '1 failed' }))
+  on('turn.complete', (_: unknown, e: any) => ({ text: e.answer }))
+  on('prompt.submit', (_: unknown, e: any) => ({ text: e.text }))
+  // 舊人設（版本 3）、藏著、經驗值差 1 就升階
+  const clock = await start($, on, {
+    'buddy.bound.v1': { ...SAVE_X, isHidden: true, xp: 242, soul: { ...SAVE_X.soul, v: 3 } },
+  })
+  await clock.settle()
+  await $.prompt.submit({ text: '阿丸你在嗎' })
+  await $.tool.call({ tool: 'Bash', command: 'npm test' })
+  await $.turn.complete({ answer: '長'.repeat(200), durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await clock.settle()
+  expect(completes.length).toBe(0)
+  expect(forks).toBe(0)
+
+  const back = await $.command.run({ command: 'buddy', args: '' })
+  expect(back.text).toContain('回來了')
+  await clock.settle()
+  // 叫出來後才補寫人設；經驗值沒有在藏著時增加，所以沒有升階
+  expect(completes.length).toBe(1)
+  expect(completes[0].system).toContain('保留牠原本的名字')
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).not.toContain('升階')
+})
+
+test('the mood shown is derived, with one fixed priority', async () => {
+  const base = { isWorking: false, now: 1_000_000, lastActiveAt: 1_000_000, pending: null, quip: null }
+  expect(moodOf(base)).toBe('idle')
+  expect(moodOf({ ...base, quip: { text: 'x', mood: 'happy', at: 999_000 } })).toBe('happy')
+  expect(moodOf({ ...base, quip: { text: 'x', mood: 'happy', at: 0 } })).toBe('idle')
+  expect(moodOf({ ...base, pending: { kind: 'error', detail: '' }, quip: { text: 'x', mood: 'happy', at: 999_000 } })).toBe('worried')
+  expect(moodOf({ ...base, lastActiveAt: 0, pending: { kind: 'error', detail: '' } })).toBe('sleepy')
+  expect(moodOf({ ...base, isWorking: true, lastActiveAt: 0 })).toBe('busy')
 })

@@ -14,6 +14,9 @@ export type Buddy = {
   trait: number
   /** 眼睛款式 */
   eyeStyle: string
+  /** 強項（唯一最高的屬性）與弱項（唯一最低的屬性） */
+  strength: StatName
+  weakness: StatName
 }
 
 export type Lang = 'en' | 'zh-TW'
@@ -46,16 +49,24 @@ export type Save = {
   isHidden: boolean
 }
 
+/** 夥伴最近說的一句話；心情跟著這句話走，一段時間後回到平常 */
 export type Quip = { text: string; mood: Mood; at: number }
+
+/** 這一輪發生、值得夥伴評論的事 */
+export type BuddyEvent = { kind: 'error' | 'test-failed' | 'big-edit'; detail: string }
+
+/** 孵蛋動畫：剩幾格，以及 Haiku 是否還在寫人設（寫完、動畫也播完才揭曉） */
+export type Hatching = { ticksLeft: number; isWritingSoul: boolean }
 
 declare module 'claude-code' {
   interface PluginState {
     'terminal-hatchling': {
       save: Shaped<Save | null>
       quip: Shaped<Quip | null>
-      hatchTicks: number
+      hatching: Shaped<Hatching | null>
+      pendingEvent: Shaped<BuddyEvent | null>
+      lastActiveAt: number
       petTicks: number
-      mood: Mood
       frame: number
     }
   }
