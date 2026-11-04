@@ -7,10 +7,10 @@ A Claude Code mod that hatches a small creature above your prompt. Its species, 
 ```
  /\     /\        Vinnick ★☆☆☆☆ Lv.2
 /  \___/  \       ╭─────────────────────────────────────────────╮
-\   @ @   /  _    │ Lovely refactor. Calmly noting it is almost │
- \   v   /  / )   │ certainly a trap. Which trap? Classified.   │
-  )     (__/ /    ╰─────────────────────────────────────────────╯
- (__|_|__)__/
+\   @ @   /  _    │ Lovely refactor. Calmly noting: you changed │
+ \   v   /  / )   │ the save format, but no test loads an old   │
+  )     (__/ /    │ save. That is the trap.                     │
+ (__|_|__)__/     ╰─────────────────────────────────────────────╯
 ```
 
 Vinnick's personality, as Haiku wrote it at hatch:
