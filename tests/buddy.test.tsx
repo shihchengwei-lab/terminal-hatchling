@@ -386,6 +386,13 @@ test('hitting the max level ascends one star and resets xp; 5 stars stays at max
   expect(level(242)).toBe(9)
   expect(level(243)).toBe(10)
   expect(level(99999)).toBe(10)
+  // 每多一顆星，滿級需要的經驗值 ×2
+  expect(level(485, 2)).toBe(9)
+  expect(level(486, 2)).toBe(10)
+  expect(level(971, 3)).toBe(9)
+  expect(level(972, 3)).toBe(10)
+  expect(level(1943, 4)).toBe(9)
+  expect(level(1944, 4)).toBe(10)
   let seed = ''
   for (let i = 0; !seed; i += 1) if (deriveBuddy(`asc-${i}`).rarity === 1) seed = `asc-${i}`
   const base = { seed, soul: null, name: null, xp: 242, pets: 0, isHidden: false }

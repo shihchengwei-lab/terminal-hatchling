@@ -131,8 +131,17 @@ function isSave(v: unknown): v is Save {
 
 export const MAX_LEVEL = 10
 
-export function level(xp: number): number {
-  return Math.min(MAX_LEVEL, 1 + Math.floor(Math.sqrt(xp / 3)))
+/** 每多一顆星，升級需要的經驗值 ×2：1 星滿級要 243，2 星 486，3 星 972，4 星 1944 */
+export function xpScale(rarity: Rarity): number {
+  return 2 ** (rarity - 1)
+}
+
+export function level(xp: number, rarity: Rarity = 1): number {
+  return Math.min(MAX_LEVEL, 1 + Math.floor(Math.sqrt(xp / (3 * xpScale(rarity)))))
+}
+
+function levelOf(s: Save): number {
+  return level(s.xp, buddyOf(s).rarity)
 }
 
 function buddyOf(s: Save): Buddy {
@@ -142,15 +151,15 @@ function buddyOf(s: Save): Buddy {
 /** 加經驗值；滿級且還沒到 5 星就升階：星數 +1、經驗值歸零 */
 export function addXp(s: Save, n: number): { next: Save; promoted: boolean } {
   const xp = s.xp + n
-  const canAscend = buddyOf(s).rarity < 5
-  if (canAscend && level(xp) >= MAX_LEVEL) {
+  const rarity = buddyOf(s).rarity
+  if (rarity < 5 && level(xp, rarity) >= MAX_LEVEL) {
     return { next: { ...s, xp: 0, ascensions: (s.ascensions ?? 0) + 1 }, promoted: true }
   }
   return { next: { ...s, xp }, promoted: false }
 }
 
 function levelText(s: Save): string {
-  return level(s.xp) >= MAX_LEVEL ? `Lv.${T().maxLevel}` : `Lv.${level(s.xp)}`
+  return levelOf(s) >= MAX_LEVEL ? `Lv.${T().maxLevel}` : `Lv.${levelOf(s)}`
 }
 
 function nameOf(s: Save, b: Buddy): string {
@@ -527,7 +536,7 @@ export const register: Register = (on, options) => {
       lastActiveAt = await $.clock.now()
       if (promoted) await announcePromotion($, s)
       else await say($, T().petSay(nameOf(s, b)), 'happy')
-      return { text: `${T().petted(nameOf(s, b), level(s.xp))}${promoted ? `\n${T().promotedSay(nameOf(s, b), rarityTag(b))}` : ''}` }
+      return { text: `${T().petted(nameOf(s, b), levelOf(s))}${promoted ? `\n${T().promotedSay(nameOf(s, b), rarityTag(b))}` : ''}` }
     }
 
     return { text: T().usage }

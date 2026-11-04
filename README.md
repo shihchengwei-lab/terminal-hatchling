@@ -58,7 +58,7 @@ After a language change, Haiku rewrites the name and personality in the new lang
 
 ## Levels and ascension
 
-- It gains 1 XP per finished turn and 1 per pet. Level = 1 + ⌊√(XP ÷ 3)⌋, up to Lv.10 (243 XP).
+- It gains 1 XP per finished turn and 1 per pet. Level = 1 + ⌊√(XP ÷ (3 × 2^(stars − 1)))⌋, up to Lv.10. Each star doubles the XP needed: reaching Lv.10 takes 243 XP at 1 star, 486 at 2, 972 at 3 and 1944 at 4.
 - At Lv.10 it **ascends**: one more star (up to 5), XP back to 0, and its stats are recalculated in the new star's range. Species, shiny and eyes stay the same.
 - On ascension Haiku makes the personality stranger on top of what it already is: the core and the quirk stay, and the name never changes.
 - At 5 stars the level stays at MAX.
