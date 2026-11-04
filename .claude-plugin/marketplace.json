@@ -2,5 +2,5 @@
   "name": "terminal-hatchling",
   "description": "在 Claude Code 輸入框上方孵出一隻會評論程式碼的小動物夥伴",
   "owner": { "name": "shihchengwei-lab" },
-  "plugins": [{ "name": "buddy", "source": "./" }]
+  "plugins": [{ "name": "terminal-hatchling", "source": "./" }]
 }

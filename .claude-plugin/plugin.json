@@ -1,1 +1,1 @@
-{ "name": "buddy", "version": "0.21.0", "description": "綁定夥伴：由種子雜湊決定物種、星數稀有度、閃光與屬性，孵化時由 Haiku 寫一次名字與人設，坐在輸入框上方，每輪結束用旁支模型冒一句話", "types": "./types/index.d.ts" }
+{ "name": "terminal-hatchling", "version": "0.22.0", "description": "綁定夥伴：由種子雜湊決定物種、星數稀有度、閃光與屬性，孵化時由 Haiku 寫一次名字與人設，坐在輸入框上方，每輪結束用旁支模型冒一句話", "types": "./types/index.d.ts" }

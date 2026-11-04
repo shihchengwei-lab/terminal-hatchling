@@ -33,7 +33,7 @@ export type Quip = { text: string; mood: Mood; at: number }
 
 declare module 'claude-code' {
   interface PluginState {
-    buddy: {
+    'terminal-hatchling': {
       save: Shaped<Save | null>
       quip: Shaped<Quip | null>
       hatchTicks: number

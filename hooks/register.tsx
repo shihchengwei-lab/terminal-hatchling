@@ -22,12 +22,12 @@ import {
   renderArt,
 } from './species'
 
-const save = atom({ plugin: 'buddy', key: 'save' } as const, null, { shape: 'bound-1' })
-const quip = atom({ plugin: 'buddy', key: 'quip' } as const, null, { shape: 'quip-1' })
-const hatchTicks = atom({ plugin: 'buddy', key: 'hatchTicks' } as const, 0)
-const petTicks = atom({ plugin: 'buddy', key: 'petTicks' } as const, 0)
-const mood = atom({ plugin: 'buddy', key: 'mood' } as const, 'idle')
-const frame = atom({ plugin: 'buddy', key: 'frame' } as const, 0)
+const save = atom({ plugin: 'terminal-hatchling', key: 'save' } as const, null, { shape: 'bound-1' })
+const quip = atom({ plugin: 'terminal-hatchling', key: 'quip' } as const, null, { shape: 'quip-1' })
+const hatchTicks = atom({ plugin: 'terminal-hatchling', key: 'hatchTicks' } as const, 0)
+const petTicks = atom({ plugin: 'terminal-hatchling', key: 'petTicks' } as const, 0)
+const mood = atom({ plugin: 'terminal-hatchling', key: 'mood' } as const, 'idle')
+const frame = atom({ plugin: 'terminal-hatchling', key: 'frame' } as const, 0)
 
 const STORE_KEY = 'buddy.bound.v1'
 const SOUL_MODEL = 'haiku'

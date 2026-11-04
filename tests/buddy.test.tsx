@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 
 import { deriveBuddy, inspirationsOf } from '../hooks/register'
 
-const BAND = { plugin: 'buddy', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as const
+const BAND = { plugin: 'terminal-hatchling', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false } } as const
 const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const SOUL_REPLY = '{"name":"鍋巴","persona":"看到沒關的檔案就會偷偷蓋上鍋蓋。"}'
 const SAVE_X = {
@@ -10,7 +10,7 @@ const SAVE_X = {
   name: null, xp: 0, pets: 0, isHidden: false,
 }
 const CARD_ROW = (text: string, args = '') => ({
-  plugin: 'buddy', component: 'CommandOutput',
+  plugin: 'terminal-hatchling', component: 'CommandOutput',
   props: { command: 'buddy', args, text, isErrored: false },
 }) as const
 

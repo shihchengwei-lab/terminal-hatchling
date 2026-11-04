@@ -15,13 +15,13 @@
 在 Claude Code 終端機的輸入框：
 
 ```
-/plugin install buddy --marketplace shihchengwei-lab/terminal-hatchling
+/plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal-hatchling
 ```
 
 從 shell：
 
 ```
-claude plugin install buddy --marketplace shihchengwei-lab/terminal-hatchling
+claude plugin install terminal-hatchling --marketplace shihchengwei-lab/terminal-hatchling
 ```
 
 桌面版 app（`/plugin` 不能用的地方）：點輸入框旁的 +，選 Plugins，用 `shihchengwei-lab/terminal-hatchling` 新增 marketplace，再新增 plugin。
