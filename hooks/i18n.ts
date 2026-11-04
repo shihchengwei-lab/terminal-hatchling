@@ -1,6 +1,6 @@
-import type { Rarity, StatName } from '../types'
+import type { Lang, Rarity, StatName } from '../types'
 
-export type Lang = 'en' | 'zh-TW'
+export type { Lang }
 
 /** 依設定值決定語言：auto 時看 Claude Code 的 language 設定，再看環境變數 LANG */
 export function resolveLang(option: unknown, settingsLanguage: unknown, envLang: string | undefined): Lang {

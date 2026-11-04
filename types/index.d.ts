@@ -16,18 +16,32 @@ export type Buddy = {
   eyeStyle: string
 }
 
-/** 孵化時由 Haiku 寫一次的名字與人設 */
-export type Soul = { name: string; persona: string; species: string; v?: number; lang?: 'en' | 'zh-TW' }
+export type Lang = 'en' | 'zh-TW'
 
+/** 孵化時由 Haiku 寫的名字與人設；每個欄位都必填，沒有「有一半」的人設 */
+export type Soul = {
+  name: string
+  persona: string
+  /** 寫這份人設時的物種；和種子算出的物種不同就要重寫 */
+  species: string
+  /** 寫這份人設的 prompt 版本 */
+  v: number
+  lang: Lang
+}
+
+/**
+ * 存檔。每個欄位都必填、只有一種表示法：
+ * 人設還沒寫好就是 null（沒有 undefined 和 null 兩種「沒有」）。
+ * 舊格式的存檔只在讀進來的那一刻由 parseSave 轉成這個形狀。
+ */
 export type Save = {
+  version: 2
   seed: string
-  /** 種子來源：git 全域 email 的雜湊，或隨機 */
-  seedSource?: 'git' | 'random'
-  soul?: Soul | null
-  name: string | null
+  seedSource: 'git' | 'random'
+  soul: Soul | null
   xp: number
-  /** 滿級升階的次數：每次星數 +1（最多到 5 星），經驗值歸零 */
-  ascensions?: number
+  /** 滿級升階的次數：0 到 4，每次星數 +1（最多到 5 星） */
+  ascensions: number
   pets: number
   isHidden: boolean
 }

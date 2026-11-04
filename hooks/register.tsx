@@ -34,7 +34,7 @@ import {
 let lang: Lang = 'en'
 const T = () => STRINGS[lang]
 
-const save = atom({ plugin: 'terminal-hatchling', key: 'save' } as const, null, { shape: 'bound-1' })
+const save = atom({ plugin: 'terminal-hatchling', key: 'save' } as const, null, { shape: 'save-2' })
 const quip = atom({ plugin: 'terminal-hatchling', key: 'quip' } as const, null, { shape: 'quip-1' })
 const hatchTicks = atom({ plugin: 'terminal-hatchling', key: 'hatchTicks' } as const, 0)
 const petTicks = atom({ plugin: 'terminal-hatchling', key: 'petTicks' } as const, 0)
@@ -129,8 +129,42 @@ function randomSeed(): string {
   }
 }
 
-function isSave(v: unknown): v is Save {
-  return typeof v === 'object' && v !== null && typeof (v as Save).seed === 'string' && typeof (v as Save).xp === 'number'
+const MAX_ASCENSIONS = 4
+
+function count(v: unknown): number {
+  return typeof v === 'number' && Number.isInteger(v) && v >= 0 ? v : 0
+}
+
+function parseSoulRecord(v: unknown, nameOverride: unknown): Soul | null {
+  if (typeof v !== 'object' || v === null) return null
+  const o = v as Record<string, unknown>
+  if (typeof o.name !== 'string' || typeof o.persona !== 'string' || typeof o.species !== 'string') return null
+  return {
+    name: typeof nameOverride === 'string' && nameOverride ? nameOverride : o.name,
+    persona: o.persona,
+    species: o.species,
+    // 舊格式沒有版本：記成 0，讀進來後會以原人設為底重寫
+    v: typeof o.v === 'number' ? o.v : 0,
+    lang: o.lang === 'en' || o.lang === 'zh-TW' ? o.lang : 'zh-TW',
+  }
+}
+
+/** 存檔的唯一入口：任何形狀進來，出去的不是合法的 Save 就是 null（parse, don't validate） */
+export function parseSave(raw: unknown): Save | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.seed !== 'string' || o.seed === '') return null
+  return {
+    version: 2,
+    seed: o.seed,
+    seedSource: o.seedSource === 'git' || o.seedSource === 'random' ? o.seedSource : o.seed.startsWith('git:') ? 'git' : 'random',
+    // 舊版的自訂名字（/buddy name）併進人設
+    soul: parseSoulRecord(o.soul, o.name),
+    xp: count(o.xp),
+    ascensions: Math.min(MAX_ASCENSIONS, count(o.ascensions)),
+    pets: count(o.pets),
+    isHidden: o.isHidden === true,
+  }
 }
 
 export const MAX_LEVEL = 10
@@ -149,7 +183,7 @@ function levelOf(s: Save): number {
 }
 
 function buddyOf(s: Save): Buddy {
-  return deriveBuddy(s.seed, s.ascensions ?? 0)
+  return deriveBuddy(s.seed, s.ascensions)
 }
 
 /** 加經驗值；滿級且還沒到 5 星就升階：星數 +1、經驗值歸零 */
@@ -157,7 +191,7 @@ export function addXp(s: Save, n: number): { next: Save; promoted: boolean } {
   const xp = s.xp + n
   const rarity = buddyOf(s).rarity
   if (rarity < 5 && level(xp, rarity) >= MAX_LEVEL) {
-    return { next: { ...s, xp: 0, ascensions: (s.ascensions ?? 0) + 1 }, promoted: true }
+    return { next: { ...s, xp: 0, ascensions: s.ascensions + 1 }, promoted: true }
   }
   return { next: { ...s, xp }, promoted: false }
 }
@@ -167,7 +201,7 @@ function levelText(s: Save): string {
 }
 
 function nameOf(s: Save, b: Buddy): string {
-  return s.name ?? s.soul?.name ?? speciesLabel(speciesOf(b.species), lang)
+  return s.soul?.name ?? speciesLabel(speciesOf(b.species), lang)
 }
 
 /** 有最高原則的物種，在提示詞後面加一行 */
@@ -226,7 +260,7 @@ export function trimAtBoundary(text: string, max: number): string {
   return `${(soft >= max * 0.5 ? head.slice(0, soft) : head).replace(/[，、；,;\s]+$/, '')}…`
 }
 
-export function parseSoul(text: string): Omit<Soul, 'species'> | null {
+export function parseSoul(text: string): Pick<Soul, 'name' | 'persona'> | null {
   const m = text.match(/\{[\s\S]*\}/)
   if (!m) return null
   try {
@@ -292,9 +326,12 @@ async function load($: EngineInterface): Promise<Save | null> {
   const cur = await read($, save)
   if (cur) return cur
   const stored = await $.store.get(STORE_KEY)
-  if (!isSave(stored)) return null
-  await update($, save, () => stored)
-  return stored
+  const parsed = parseSave(stored)
+  if (!parsed) return null
+  // 舊格式讀進來就存回新格式，之後只會看到新格式
+  if ((stored as { version?: unknown }).version !== 2) await $.store.set(STORE_KEY, parsed)
+  await update($, save, () => parsed)
+  return parsed
 }
 
 async function commit($: EngineInterface, s: Save): Promise<void> {
@@ -310,7 +347,7 @@ async function say($: EngineInterface, text: string, m: Mood): Promise<void> {
 
 async function writeSoul($: EngineInterface, seed: string): Promise<void> {
   const before = await read($, save)
-  const b = deriveBuddy(seed, before?.seed === seed ? (before.ascensions ?? 0) : 0)
+  const b = deriveBuddy(seed, before?.seed === seed ? before.ascensions : 0)
   const prev = before?.seed === seed ? before.soul : null
   // 同一隻（物種沒變）只是換語言或改寫法：拿原本的名字和個性去改寫，保留升階累積的怪癖
   const isPreserve = !!prev && prev.species === b.species
@@ -331,7 +368,7 @@ async function writeSoul($: EngineInterface, seed: string): Promise<void> {
     return
   }
   // 語言沒變時名字一字不改
-  const name = isPreserve && (prev.lang ?? 'zh-TW') === lang ? prev.name : soul.name
+  const name = isPreserve && prev.lang === lang ? prev.name : soul.name
   await commit($, { ...cur, soul: { ...soul, name, species: b.species, v: SOUL_VERSION, lang } })
 }
 
@@ -359,11 +396,12 @@ async function gitSeed($: EngineInterface): Promise<string | null> {
 async function hatch($: EngineInterface): Promise<Save> {
   const fromGit = await gitSeed($)
   const s: Save = {
+    version: 2,
     seed: fromGit ?? randomSeed(),
     seedSource: fromGit ? 'git' : 'random',
     soul: null,
-    name: null,
     xp: 0,
+    ascensions: 0,
     pets: 0,
     isHidden: false,
   }
@@ -502,9 +540,8 @@ export const register: Register = (on, options) => {
     const s = await load($)
     // 物種表、人設寫法或語言改過時，舊人設對不上，重寫一份
     const isStale =
-      !!s?.soul &&
-      (s.soul.species !== buddyOf(s).species || s.soul.v !== SOUL_VERSION || (s.soul.lang ?? 'zh-TW') !== lang)
-    if (s && (s.soul === undefined || s.soul === null || isStale)) hatchSoul($, s.seed)
+      !!s?.soul && (s.soul.species !== buddyOf(s).species || s.soul.v !== SOUL_VERSION || s.soul.lang !== lang)
+    if (s && (s.soul === null || isStale)) hatchSoul($, s.seed)
     $.clock.every(TICK_MS, async () => {
       await update($, frame, f => (f + 1) % 10_000)
       if ((await read($, petTicks)) > 0) await update($, petTicks, n => Math.max(0, n - 1))

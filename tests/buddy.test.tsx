@@ -1,6 +1,6 @@
 import { expect, mock, test } from 'claude-code/testing'
 
-import { addXp, deriveBuddy, inspirationsOf, level, trimAtBoundary } from '../hooks/register'
+import { addXp, deriveBuddy, inspirationsOf, level, parseSave, trimAtBoundary } from '../hooks/register'
 
 const ZH = { options: { language: 'zh-TW' } }
 const EN = { options: { language: 'en' } }
@@ -9,8 +9,9 @@ const BAND = { plugin: 'terminal-hatchling', component: 'AbovePrompt', props: { 
 const USAGE = { input_tokens: 1, output_tokens: 1, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 }
 const SOUL_REPLY = '{"name":"鍋巴","persona":"看到沒關的檔案就會偷偷蓋上鍋蓋。"}'
 const SAVE_X = {
-  seed: 'x', soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 4 },
-  name: null, xp: 0, pets: 0, isHidden: false,
+  version: 2, seed: 'x', seedSource: 'random',
+  soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 4, lang: 'zh-TW' },
+  xp: 0, ascensions: 0, pets: 0, isHidden: false,
 }
 const CARD_ROW = (text: string, args = '') => ({
   plugin: 'terminal-hatchling', component: 'CommandOutput',
@@ -395,7 +396,7 @@ test('hitting the max level ascends one star and resets xp; 5 stars stays at max
   expect(level(1944, 4)).toBe(10)
   let seed = ''
   for (let i = 0; !seed; i += 1) if (deriveBuddy(`asc-${i}`).rarity === 1) seed = `asc-${i}`
-  const base = { seed, soul: null, name: null, xp: 242, pets: 0, isHidden: false }
+  const base = { version: 2 as const, seed, seedSource: 'random' as const, soul: null, xp: 242, ascensions: 0, pets: 0, isHidden: false }
   const { next, promoted } = addXp(base, 1)
   expect(promoted).toBe(true)
   expect(next.xp).toBe(0)
@@ -560,4 +561,38 @@ test('when the hidden species ascends, Haiku evolves its personality with the pr
   const c = await $.command.run({ command: 'buddy', args: 'card' })
   expect(c.text).toContain('黑豆')
   expect(c.text).toContain('換成列舉才肯還')
+})
+
+test('parseSave turns any old or broken shape into one valid save, or nothing', async () => {
+  expect(parseSave(null)).toBe(null)
+  expect(parseSave({})).toBe(null)
+  expect(parseSave({ seed: '' })).toBe(null)
+  // 最早的格式：沒有版本、沒有 seedSource、soul 可能 undefined、還有自訂名字
+  const old = parseSave({ seed: 'git:abc', name: '小黑', xp: 7, pets: 2, isHidden: false, soul: { name: '舊名', persona: 'p', species: 'fox' } })
+  expect(old).toEqual({
+    version: 2, seed: 'git:abc', seedSource: 'git',
+    soul: { name: '小黑', persona: 'p', species: 'fox', v: 0, lang: 'zh-TW' },
+    xp: 7, ascensions: 0, pets: 2, isHidden: false,
+  })
+  // 壞掉的數值收斂成合法值；半套的人設當成還沒寫
+  const broken = parseSave({ seed: 'r', xp: -3, pets: 1.5, ascensions: 99, isHidden: 'yes', soul: { name: 'n' } })
+  expect(broken).toEqual({
+    version: 2, seed: 'r', seedSource: 'random', soul: null,
+    xp: 0, ascensions: 4, pets: 0, isHidden: false,
+  })
+  // 已經是新格式就原樣通過
+  const v2 = { ...SAVE_X, seed: 'git:z', seedSource: 'git' }
+  expect(parseSave(v2)).toEqual(v2)
+})
+
+test('an old save on disk is migrated once and keeps its companion', ZH, async ($, on) => {
+  on('model.complete', () => ({ value: { isAnswered: true, text: SOUL_REPLY, usage: USAGE } }))
+  const clock = await start($, on, {
+    'buddy.bound.v1': { seed: 'x', name: null, xp: 5, pets: 1, isHidden: false, soul: { name: '阿丸', persona: '愛碎念', species: deriveBuddy('x').species, v: 4 } },
+  })
+  await clock.settle()
+  const c = await $.command.run({ command: 'buddy', args: 'card' })
+  expect(c.text).toContain('阿丸')
+  expect(c.text).toContain('愛碎念')
+  expect(c.text).toContain('被摸 1 次')
 })
